@@ -1,0 +1,449 @@
+{% extends 'main.html' %}
+{% load form_tags %}
+{% load static %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    {{ start_date|date:'Y' }}, Semaine {{ start_date|date:'W' }}
+    <div>
+        <a class="bi bi-arrow-left-circle" style="font-size: 1.2em;" href="{% url 'planning_with_params' year=prev_year week=prev_week %}"></a>
+        <input type="date" id="datePicker" name="date">
+        <a class="bi bi-arrow-right-circle" style="font-size: 1.2em;" href="{% url 'planning_with_params' year=next_year week=next_week %}"></a>
+    </div>
+    <div>
+        <i class="bi bi-copy icon-overlay" style="font-size: 1.5em; padding-right: 5px; padding-left: 5px;" title="Copier des shifts"></i>
+        <i class="bi bi-trash icon-overlay" style="font-size: 1.5em; padding-right: 5px; padding-left: 5px;" title="Supprimer des shifts"></i>
+        <i class="bi bi-printer icon-overlay" style="font-size: 1.5em; padding-right: 5px; padding-left: 5px;" title="Imprimer le planning"></i>
+    </div>
+</div>
+<table class = "my-table", border="1">
+    <thead>
+        <tr>
+            <th></th>
+            {% for day in days %}
+                <th>{{ day|date:'D, d' }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for emp in employe %}
+            <tr>
+                <td style = "font-size: 16px;">{{ emp.firstname }} {{ emp.name }}</td>
+                {% for day in days %}
+                    <!-- Shift code here -->
+                                <td onclick="openModal(this, '{{ emp.id }}', '{{ emp.name }}', '{{ emp.firstname }}', '{{ day|date:'Y-m-d' }}')">
+                                    <table border="1">
+                                        {% for key, value in shifts_by_emp_and_day.items %}
+                                            {% if emp.id == key %}<!-- test sur employe match-->
+                                                {% for key1, value1 in value.items %}
+                                                    {% if day == key1 %} <!-- test sur day match-->
+                                                        {% for nitem in value1 %}
+                                                            <tr style="background-color:{{ nitem.Poste.couleur }};">
+                                                                <td onclick="openInnerModal(event, this)"
+                                                                    data-date = "{{ day|date:'Y-m-d' }}"
+                                                                    data-Heurededébut="{{ nitem.Heurededébut }}"
+                                                                    data-heuredefin="{{ nitem.heuredefin }}"
+                                                                    data-end-time="{{ nitem.heuredefin }}"
+                                                                    data-duree-pause="{{ nitem.duréepause }}"
+                                                                    data-Poste="{{ nitem.Poste.id }}"
+                                                                    data-note="{{ nitem.note }}"
+                                                                    data-EmployeName = "{{ emp.name }}"
+                                                                    data-EmployeFirstName = "{{ emp.firstname }}"
+                                                                    data-EmployeId = "{{ emp.id }}"
+                                                                    data-shiftId = "{{ nitem.id }}">
+                                                                    {{nitem.Heurededébut}} - {{nitem.heuredefin}}
+                                                                    {% if nitem.note %}
+                                                                        <i class="bi bi-file-text"></i>
+                                                                    {% endif %}
+                                                                    <div style="width: 80%; height: 20px; background-color: {{ nitem.Poste.couleur }}; overflow: hidden; text-overflow: ellipsis ;">{{nitem.Poste}}</div>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </table>
+                                </td>
+                    <!-- End of shift code here-->
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<!-- The Modal -->
+<div id="myModal" class="modal">
+    <div class="modal-dialog" role="document">
+        <!-- Modal content -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="justify-content-end d-flex w-100">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true"></span>
+                    </button>
+                </div>
+            </div>
+            <div>
+                <ul class="pagination">
+                    <li class="page-item active">
+                    <a class="page-link" href="#" data-modal-content="nouveauShiftContent">Nouveau shift</a>
+                    </li>
+                    <li class="page-item">
+                    <a class="page-link" href="#" data-modal-content="nouvelAbsenceContent">Nouvelle absence</a>
+                    </li>
+                    <li class="page-item">
+                    <a class="page-link" href="#" data-modal-content="EditerShiftContent">Editer le shift sélectionné</a>
+                    </li>
+                </ul>
+            </div>
+            <!-- Content for New shift -->
+            <div id="nouveauShiftContent">
+                <h5 class="modal-title">Nouveau shift</h5>
+                <form method="post" action="" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    <!-- Date -->
+                    <div class="form-group row">
+                        <label for="{{ form.date.id_for_label }}" class="col-sm-2 col-form-label">{{ form.date.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.date|add_class:'form-control' }}
+                            <div class="invalid-feedback">{{ form.date.errors }}</div>
+                        </div>
+                    </div>
+                    <!-- Début -->
+                    <div class="form-group row">
+                        <label for="{{ form.Heurededébut.id_for_label }}" class="col-sm-2 col-form-label">{{ form.Heurededébut.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.Heurededébut|add_class:'form-control' }}
+                            <div class="invalid-feedback">{{ form.Heurededébut.errors }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Fin -->
+                    <div class="form-group row">
+                        <label for="{{ form.heuredefin.id_for_label }}" class="col-sm-2 col-form-label">{{ form.heuredefin.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.heuredefin|add_class:'form-control' }}
+                            <div class="invalid-feedback">{{ form.heuredefin.errors }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Pause -->
+                    <div class="form-group row">
+                        <label for="{{ form.duréepause.id_for_label }}" class="col-sm-2 col-form-label">{{ form.duréepause.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.duréepause|add_class:'form-control' }}
+                            <div class="invalid-feedback">{{ form.duréepause.errors }}</div>
+                        </div>
+                    </div>
+                    <!-- Employe as a hidden field -->
+                    <input type="hidden" name="Employe" id="id_Employe">
+                    <!-- Poste -->
+                    <div class="form-group row">
+                        <label for="{{ form.Poste.id_for_label }}" class="col-sm-2 col-form-label">{{ form.Poste.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.Poste|add_class:'form-control' }}
+                            <div class="invalid-feedback">{{ form.Poste.errors }}</div>
+                        </div>
+                    </div>
+                    <!-- Note -->
+                    <div class="form-group row">
+                        <label for="{{ form.heuredefin.id_for_label }}" class="col-sm-2 col-form-label">{{ form.note.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.note|add_class:'form-control' }}
+                            <div class="invalid-feedback">{{ form.note.errors }}</div>
+                        </div>
+                    </div>
+                    <!-- Hidden Form type field -->
+                    <div class="form-group row" style="display:none;">
+                        <input type="hidden" name="{{ form.action.name }}" id="NouveauShiftTypeFormId">
+                    </div>
+                    <!-- Bouton Valider -->
+                    <div class="modal-footer justify-content-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary">Valider</button>
+                    </div>
+                </form>
+            </div>
+            <!-- Content for Nouvelle absence -->
+            <div id="nouvelAbsenceContent" style="display: none;">
+                <h5 class="modal-title">Nouvelle absence pour</h5>
+                <!-- TypeAbsence -->
+                <div class="form-group">
+                    <label for="{{ form.TypeAbsence.id_for_label }}">{{ form.TypeAbsence.label }}</label>
+                    {{ form.TypeAbsence }}
+                    {% if form.TypeAbsence.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.TypeAbsence.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                <!-- Début -->
+                <div class="form-group row">
+                    <label for="{{ form.Heurededébut.id_for_label }}" class="col-sm-2 col-form-label">{{ form.Heurededébut.label }}</label>
+                    <div class="col-sm-10">
+                        <input type="time" name="{{ form.Heurededébut.name }}" id="NouvelleAbsenceHeurededébut" class="form-control" value="{{ form.Heurededébut.value|default_if_none:'' }}">
+                        <div class="invalid-feedback">{{ form.Heurededébut.errors }}</div>
+                    </div>
+                </div>
+
+                <!-- Fin -->
+                <div class="form-group row">
+                    <label for="{{ form.heuredefin.id_for_label }}" class="col-sm-2 col-form-label">{{ form.heuredefin.label }}</label>
+                    <div class="col-sm-10">
+                        <input type="time" name="{{ form.heuredefin.name }}" id="NouvelleAbsenceheuredefin" class="form-control" value="{{ form.heuredefin.value|default_if_none:'' }}">
+                        <div class="invalid-feedback">{{ form.heuredefin.errors }}</div>
+                    </div>
+                </div>
+
+                <!-- Pause -->
+                <div class="form-group row">
+                    <label for="{{ form.duréepause.id_for_label }}" class="col-sm-2 col-form-label">{{ form.duréepause.label }}</label>
+                    <div class="col-sm-10">
+                        <input type="time" name="{{ form.duréepause.name }}" id="NouvelleAbsenceduréepause" class="form-control" value="{{ form.duréepause.value|default_if_none:'' }}">
+                        <div class="invalid-feedback">{{ form.duréepause.errors }}</div>
+                    </div>
+                </div>
+                <!-- Note -->
+                <div class="form-group row">
+                    <label for="{{ form.heuredefin.id_for_label }}" class="col-sm-2 col-form-label">{{ form.note.label }}</label>
+                    <div class="col-sm-10">
+                        {{ form.note|add_class:'form-control' }}
+                        <div class="invalid-feedback">{{ form.note.errors }}</div>
+                    </div>
+                </div>
+                <!-- Hidden Form type field -->
+                <div class="form-group row" style="display:none;">
+                    <input type="hidden" name="{{ form.action.name }}" id="NouvelleAbsenceTypeFormId">
+                </div>
+                <!-- Bouton Valider -->
+                <div class="modal-footer justify-content-end">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Valider</button>
+                </div>
+            </div>
+            <!-- Content for edit shift en utilisant shift id-->
+            <div id="EditerShiftContent" style="display: none;">
+               <h5 class="modal-title">Modifier le shift</h5>
+                <form method="post" action="" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    <!-- Date -->
+                    <div class="form-group row">
+                        <label for="{{ form.date.id_for_label }}" class="col-sm-2 col-form-label">{{ form.date.label }}</label>
+                        <div class="col-sm-10">
+                            <input type="date" name="{{ form.date.name }}" id="EditShiftDate" class="form-control" value="{{ form.date.value|default_if_none:'' }}">
+                            <div class="invalid-feedback">{{ form.date.errors }}</div>
+                        </div>
+                    </div>
+                    <!-- Début -->
+                    <div class="form-group row">
+                        <label for="{{ form.Heurededébut.id_for_label }}" class="col-sm-2 col-form-label">{{ form.Heurededébut.label }}</label>
+                        <div class="col-sm-10">
+                            <input type="time" name="{{ form.Heurededébut.name }}" id="EditShiftHeurededébut" class="form-control" value="{{ form.Heurededébut.value|default_if_none:'' }}">
+                            <div class="invalid-feedback">{{ form.Heurededébut.errors }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Fin -->
+                    <div class="form-group row">
+                        <label for="{{ form.heuredefin.id_for_label }}" class="col-sm-2 col-form-label">{{ form.heuredefin.label }}</label>
+                        <div class="col-sm-10">
+                            <input type="time" name="{{ form.heuredefin.name }}" id="EditShiftheuredefin" class="form-control" value="{{ form.heuredefin.value|default_if_none:'' }}">
+                            <div class="invalid-feedback">{{ form.heuredefin.errors }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Pause -->
+                    <div class="form-group row">
+                        <label for="{{ form.duréepause.id_for_label }}" class="col-sm-2 col-form-label">{{ form.duréepause.label }}</label>
+                        <div class="col-sm-10">
+                            <input type="time" name="{{ form.duréepause.name }}" id="EditShiftduréepause" class="form-control" value="{{ form.duréepause.value|default_if_none:'' }}">
+                            <div class="invalid-feedback">{{ form.duréepause.errors }}</div>
+                        </div>
+                    </div>
+                    <!-- Employe as a hidden field -->
+                    <input type="hidden" name="Employe" id="EditShitid_Employe">
+                    <!-- Poste -->
+                    <div class="form-group row">
+                        <label for="{{ form.Poste.id_for_label }}" class="col-sm-2 col-form-label">{{ form.Poste.label }}</label>
+                        <div class="col-sm-10">
+                            <select name="{{ form.Poste.name }}" id="EditShiftPoste" class="form-select" value="{{ form.Poste.value|default_if_none:'' }}">
+                                {% for poste in form.Poste.field.queryset %}
+                                    <option value="{{ poste.id }}">
+                                        {{ poste.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                    </div>
+                    <!-- Note -->
+                    <div class="form-group row">
+                        <label for="{{ form.heuredefin.id_for_label }}" class="col-sm-2 col-form-label">{{ form.note.label }}</label>
+                        <div class="col-sm-10">
+                            <input type="text" name="{{ form.note.name }}" id="EditShiftnote" class="form-control" value="{{ form.note.value|default_if_none:'' }}">
+                            <div class="invalid-feedback">{{ form.note.errors }}</div>
+                        </div>
+                    </div>
+                    <!-- Hidden Form type field -->
+                    <div class="form-group row" style="display:none;">
+                        <input type="hidden" name="{{ form.action.name }}" id="EditShiftTypeFormId">
+                    </div>
+                    <!-- Hidden shiftId field -->
+                    <div class="form-group row" style="display:none;">
+                        <input type="hidden" name="{{ form.shift_Id.name }}" id="EditShiftShift_Id">
+                    </div>
+                    <!-- Bouton Valider -->
+                    <div class="modal-footer justify-content-end">
+                        <button type="submit" name="actionButton" value="delete" class="btn btn-danger">Supprimer</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" name="actionButton" value="edit" class="btn btn-primary">Valider</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script> 
+    function convertTo24HourFormat(timeString) {
+        let [time, modifier] = timeString.split(' ');
+        let [hours, minutes] = time.split(':');
+
+        // Set default minutes if missing
+        minutes = minutes || '00';
+
+        // Convert hours to integer and pad with zero if needed
+        hours = parseInt(hours, 10);
+        if (hours === 12 && modifier === 'a.m.') {
+            hours = 0; // 12 a.m. is 00:00 in 24-hour format
+        } else if (modifier === 'p.m.' && hours !== 12) {
+            hours += 12; // For PM hours, except for 12 p.m. (noon)
+        }
+        hours = hours.toString().padStart(2, '0');
+
+        return `${hours}:${minutes}`;
+    }
+    // Code qui gere la modal
+    // Get the modal
+    var modal = document.getElementById("myModal"); //move this into the function ?
+    
+    // Function to open the modal that defaults to a New Shift
+    function openModal(td, empId, empName, empFirstName, date) {
+        //modal.querySelector('[name="Employe"]').value = empId;
+        modal.querySelector('[name="date"]').value = date;
+        modal.querySelector('#id_Employe').value = empId;
+        document.getElementById('NouveauShiftTypeFormId').value = "AddShift";
+        // Update the modal title
+        modal.querySelector('.modal-title').textContent = 'Nouveau shift pour ' + empName + ' ' + empFirstName;
+        modal.style.display = "block";
+        //make contenu de nouveau shift displayed
+        document.getElementById('nouveauShiftContent').style.display = 'none';
+        document.getElementById('nouvelAbsenceContent').style.display = 'none';
+        document.getElementById('EditerShiftContent').style.display = 'none';
+        document.getElementById('nouveauShiftContent').style.display = 'block';
+        //make nouveau shift page active only
+        var paginationItems = document.querySelectorAll('.pagination .page-item');
+        
+        // Remove 'active' class from all pagination items
+        paginationItems.forEach(function(item) {
+            item.classList.remove('active');
+        });
+
+        // Add 'active' class to the third pagination item
+        // Note: Array indices are zero-based, so the third item is at index 2
+        paginationItems[0].classList.add('active');
+        // Disable the third pagination item
+        paginationItems[2].classList.add('disabled');
+        }
+
+    //function to open the modal that defaults to edit shift
+    function openInnerModal(event, cell) {
+    // Stop the event from propagating to the outer table cell
+    console.log("Inner modal function called");
+    event.stopPropagation();
+    // Retrieve data from the cell's data attributes
+    var startTime = cell.getAttribute('data-start-time');
+    var endTime = cell.getAttribute('data-end-time');
+    var note = cell.getAttribute('data-note');
+    modal.querySelector('.modal-title').textContent = 'Modifier le shift de ';
+    modal.style.display = "block";
+    document.getElementById('nouveauShiftContent').style.display = 'none';
+    document.getElementById('nouvelAbsenceContent').style.display = 'none';
+    document.getElementById('EditerShiftContent').style.display = 'none';
+    //Fill Edit shift form
+    document.getElementById('EditShiftDate').value = cell.getAttribute('data-date');
+    document.getElementById('EditShiftHeurededébut').value = convertTo24HourFormat(cell.getAttribute('data-Heurededébut'));
+    document.getElementById('EditShiftheuredefin').value = convertTo24HourFormat(cell.getAttribute('data-end-time'));
+    document.getElementById('EditShiftduréepause').value = convertTo24HourFormat(cell.getAttribute('data-duree-pause'));
+    document.getElementById('EditShitid_Employe').value = cell.getAttribute('data-EmployeId');
+    document.getElementById('EditShiftTypeFormId').value = "EditShift";
+    document.getElementById('EditShiftShift_Id').value = cell.getAttribute('data-shiftId');
+    document.getElementById('EditShiftPoste').value = cell.getAttribute('data-Poste');
+    document.getElementById('EditShiftnote').value = cell.getAttribute('data-note');
+    document.getElementById('EditerShiftContent').style.display = 'block';
+    //Fill nouveau shift form
+    modal.querySelector('[name="date"]').value = cell.getAttribute('data-date');
+    modal.querySelector('#id_Employe').value = cell.getAttribute('data-EmployeId');
+    document.getElementById('NouveauShiftTypeFormId').value = "AddShift";
+    //Fill nouvelle absence form
+    //make edition page active only
+    var paginationItems = document.querySelectorAll('.pagination .page-item');
+    
+    // Remove 'active' class from all pagination items
+    paginationItems.forEach(function(item) {
+        item.classList.remove('active');
+    });
+    //enable the last pagination
+    paginationItems[2].classList.remove('disabled');
+
+    // Add 'active' class to the third pagination item
+    // Note: Array indices are zero-based, so the third item is at index 2
+    if (paginationItems.length > 2) {
+        paginationItems[2].classList.add('active');
+    }
+
+    }
+    // Get the element that closes the modal
+    var span = document.getElementsByClassName("btn-close")[0];
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+    //close on all annuler boutons
+    var cancelButtons = document.getElementsByClassName("btn btn-secondary");
+
+    Array.from(cancelButtons).forEach(function(cancelButton) {
+        cancelButton.onclick = function() {
+            modal.style.display = "none";
+        };
+    });
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+</script>
+<script> // code qui gere le contenu modal displayed à partir d'un click de pagination
+    document.querySelectorAll('.pagination .page-link').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            // Remove 'active' class from all pagination items
+            document.querySelectorAll('.pagination .page-item').forEach(function(item) {
+                item.classList.remove('active');
+            });
+
+            // Add 'active' class to the clicked pagination item's parent
+            this.parentNode.classList.add('active');
+
+            // Hide both content sections
+            document.getElementById('nouveauShiftContent').style.display = 'none';
+            document.getElementById('nouvelAbsenceContent').style.display = 'none';
+            document.getElementById('EditerShiftContent').style.display = 'none';
+
+            // Get the ID of the content section to show
+            var contentToShow = this.getAttribute('data-modal-content');
+
+            // Show the selected content section
+            document.getElementById(contentToShow).style.display = 'block';
+        });
+    });
+</script>
+{% endblock %}

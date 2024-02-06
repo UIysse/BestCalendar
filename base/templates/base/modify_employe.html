@@ -1,0 +1,92 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Modify Employe</h2>
+
+    <form method="post" action="{% url 'modify_employe' employe_id %}" class="needs-validation" novalidate>
+        {% csrf_token %}
+        <!-- Name Field -->
+        <div class="form-group row">
+            <label for="{{ form.name.id_for_label }}" class="col-sm-2 col-form-label">{{ form.name.label_tag }}</label>
+            <div class="col-sm-10">
+                {{ form.name }}
+                <div class="invalid-feedback">{{ form.name.errors }}</div>
+            </div>
+        </div>
+
+        <!-- prénom Field -->
+        <div class="form-group row">
+            <label for="{{ form.name.id_for_label }}" class="col-sm-2 col-form-label">{{ form.firstname.label_tag }}</label>
+            <div class="col-sm-10">
+                {{ form.firstname }}
+                <div class="invalid-feedback">{{ form.firstname.errors }}</div>
+            </div>
+        </div>
+
+        <!-- Position Field -->
+        <div class="form-group row">
+            <label for="{{ form.Poste.id_for_label }}" class="col-sm-2 col-form-label">{{ form.phone_number.label_tag }}</label>
+            <div class="col-sm-10">
+                {{ form.phone_number }}
+                <div class="invalid-feedback">{{ form.phone_number.errors }}</div>
+            </div>
+        </div>
+
+        <!-- Position Field -->
+        <div class="form-group row">
+            <label for="{{ form.Poste.id_for_label }}" class="col-sm-2 col-form-label">{{ form.e_mail.label_tag }}</label>
+            <div class="col-sm-10">
+                {{ form.e_mail }}
+                <div class="invalid-feedback">{{ form.e_mail.errors }}</div>
+            </div>
+        </div>
+
+        <!-- Position Field -->
+        <div class="form-group row">
+            <label for="{{ form.Poste.id_for_label }}" class="col-sm-2 col-form-label">{{ form.Poste.label_tag }}</label>
+            <div class="col-sm-10">
+                {{ form.Poste }}
+                <div class="invalid-feedback">{{ form.Poste.errors }}</div>
+            </div>
+        </div>
+
+        <!-- Add other fields as needed -->
+        <div class="form-group row">
+            <label for="{{ form.EntrepriseRattachée.id_for_label }}" class="col-sm-2 col-form-label">{{ form.EntrepriseRattachée.label_tag }}</label>
+            <div class="col-sm-10">
+                {{ form.EntrepriseRattachée }}
+                <div class="invalid-feedback">{{ form.EntrepriseRattachée.errors }}</div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Modify Employe</button>
+    </form>
+</div>
+
+<!-- Include Bootstrap JS (optional, if you want to use Bootstrap features that require JS) -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<script>
+// Bootstrap validation script
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        // Fetch all the forms we want to apply custom Bootstrap validation styles to
+        var forms = document.getElementsByClassName('needs-validation');
+        // Loop over them and prevent submission
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+</script>
+
+{% endblock %}

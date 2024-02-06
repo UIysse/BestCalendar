@@ -1,0 +1,28 @@
+{% load static %}
+<header>
+<nav class="navbar navbar-expand-lg bg-dark" data-bs-theme="dark">
+  <div class="container-fluid">
+    <div class="collapse navbar-collapse" id="navbarColor02">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link active" href="{% url 'home' %}">Accueil
+            <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'planning' %}">Planning</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'team_members_page' %}">Equipe</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Badgeuse</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'contact' %}">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+</header>

@@ -1,0 +1,58 @@
+{% extends 'main.html' %}
+{% load form_tags %}
+{% block content %}
+<div class="container mt-5" style="width: 40%; border: 1px solid #000000; padding: 10px; margin: auto;">
+    <h4 class="mb-4">Formulaire de contact</h4>
+    <form action="/contact/" method="post">
+    {% csrf_token %}
+            <!-- Nom -->
+            <div class="form-group">
+                <div class="form-floating mb-3">
+                    {{ form.name|add_class:'form-control' }}
+                    {{ form.name.label_tag }}
+                    <div class="invalid-feedback">
+                        {{ form.name.errors }}
+                    </div>
+                </div>
+                    <div class="form-floating mb-3">
+                    {{ form.email|add_class:'form-control' }}
+                    {{ form.email.label_tag }}
+                    <div class="invalid-feedback">
+                        {{ form.email.errors }}
+                    </div>
+                </div>
+                <div class="form-floating mb-3">
+                    {{ form.phone|add_class:'form-control' }}
+                    {{ form.phone.label_tag }}
+                    <div class="invalid-feedback">
+                        {{ form.phone.errors }}
+                    </div>
+                </div>
+                <div class="form-floating mb-3">
+                    {{ form.subject|add_class:'form-control' }}
+                    {{ form.subject.label_tag }}
+                    <div class="invalid-feedback">
+                        {{ form.subject.errors }}
+                    </div>
+                </div>
+                <div class="form-floating mb-3">
+                    {{ form.message|add_class:'form-control' }}
+                    {{ form.message.label_tag }}
+                    <div class="invalid-feedback">
+                        {{ form.message.errors }}
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-end">
+                    <button type="submit" class="btn btn-dark">Valider</button>
+                </div>
+            <!-- E-mail -->
+            <!-- Téléphone -->
+            <!-- Sujet -->
+            <!-- Message -->
+            </div>
+    </form>
+</div>
+
+
+
+{% endblock %}

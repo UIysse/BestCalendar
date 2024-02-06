@@ -1,0 +1,89 @@
+{% extends 'main.html' %}
+{% load form_tags %}
+{% block content %}
+<div class="container mt-5" style="width: 20%;">
+    <h2 class="mb-4">Nouvel employé</h2>
+
+    <form method="post" action="" class="needs-validation" novalidate>
+        {% csrf_token %}
+        <!-- Nom -->
+        <div class="form-group">
+            <div class="form-floating mb-3">
+                {{ form.name|add_class:'form-control' }}
+                {{ form.name.label_tag }}
+                <div class="invalid-feedback">
+                    {{ form.name.errors }}
+                </div>
+            </div>
+        <!-- Prénom -->
+            <div class="form-floating mb-3">
+                {{ form.firstname|add_class:'form-control' }}
+                {{ form.firstname.label_tag }}
+                <div class="invalid-feedback">
+                    {{ form.firstname.errors }}
+                </div>
+            </div>
+        <!-- Telephone -->
+            <div class="form-floating mb-3">
+                {{ form.phone_number|add_class:'form-control' }}
+                {{ form.phone_number.label_tag }}
+                <div class="invalid-feedback">
+                    {{ form.phone_number.errors }}
+                </div>
+            </div>
+        <!-- Email -->
+            <div class="form-floating mb-3">
+                {{ form.e_mail|add_class:'form-control' }}
+                {{ form.e_mail.label_tag }}
+                <div class="invalid-feedback">
+                    {{ form.e_mail.errors }}
+                </div>
+            </div>
+        </div>
+        <!-- Poste -->
+        <div class="form-group">
+            <label for="{{ form.Poste.id_for_label }}" class="form-label mt-4">{{ form.Poste.label }}</label>
+            {{ form.Poste|add_class:'form-select' }}
+            <div class="invalid-feedback">
+                {{ form.Poste.errors }}
+            </div>
+        </div>
+        <!-- Entreprise Ratachée -->
+        <div class="form-group">
+            <label for="{{ form.EntrepriseRattachée.id_for_label }}" class="form-label mt-4">{{ form.EntrepriseRattachée.label }}</label>
+            {{ form.EntrepriseRattachée|add_class:'form-select' }}
+            <div class="invalid-feedback">
+                {{ form.EntrepriseRattachée.errors }}
+            </div>
+        </div>
+        <button type="Submit" class="btn btn-dark">Valider</button>
+    </form>
+</div>
+
+<!-- Include Bootstrap JS (optional, if you want to use Bootstrap features that require JS) -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<script>
+// Bootstrap validation script
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        // Fetch all the forms we want to apply custom Bootstrap validation styles to
+        var forms = document.getElementsByClassName('needs-validation');
+        // Loop over them and prevent submission
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+</script>
+
+{% endblock %}
