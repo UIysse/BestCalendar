@@ -2,6 +2,7 @@
 {% load form_tags %}
 {% load static %}
 {% block content %}
+{% if user.is_authenticated %}
 <div style="display: flex; justify-content: space-between; align-items: center;">
     {{ start_date|date:'Y' }}, Semaine {{ start_date|date:'W' }}
     <div>
@@ -446,4 +447,10 @@
         });
     });
 </script>
+{% else %}
+<h1>Veuillez vous connecter pour accéder à cette page web</h1>
+
+<a href="{% url 'login' %}">Se connecter</a>
+
+{% endif %}
 {% endblock %}

@@ -21,6 +21,24 @@
         <li class="nav-item">
           <a class="nav-link" href="{% url 'contact' %}">Contact</a>
         </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Utilisateur</a>
+          <div class="dropdown-menu">
+            {% if user.is_authenticated %}
+            {% if user.is_superuser %}
+                <a class="dropdown-item" href="{% url 'admin_approval' %}">Admin</a>
+            {% endif %}
+            <a class="dropdown-item" href="#">Mon profil</a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="{% url 'logout' %}">Se déconnecter</a>
+            {% else %}
+            <a class="dropdown-item" href="{% url 'login' %}">Se connecter</a>
+            <a class="dropdown-item" href="{% url 'register_user' %}">S'inscrire</a>
+            {% endif %}
+          </div>
+        </li>
+
+
       </ul>
     </div>
   </div>

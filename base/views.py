@@ -175,3 +175,7 @@ def delete_employe(request):
     employe = get_object_or_404(Employe, pk=employe_id)
     employe.delete()
     return JsonResponse({'deleted': True})
+
+def admin_approval(request):
+    context = {}
+    return render(request, 'base/admin.html', context)

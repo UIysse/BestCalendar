@@ -1,6 +1,7 @@
 {% extends 'main.html' %}
 {% load form_tags %}
 {% block content %}
+{% if user.is_authenticated %}
 <div class="container mt-5" style="width: 20%;">
     <h2 class="mb-4">Nouvel employé</h2>
 
@@ -85,5 +86,10 @@
     }, false);
 })();
 </script>
+{% else %}
+<h1>Veuillez vous connecter pour accéder à cette page web</h1>
 
+<a href="{% url 'login' %}">Se connecter</a>
+
+{% endif %}
 {% endblock %}

@@ -1,6 +1,7 @@
 {% extends 'main.html' %}
 
 {% block content %}
+{% if user.is_authenticated %}
 <div style="display:none;" id="csrf-token">
     {% csrf_token %}
 </div>
@@ -60,4 +61,10 @@
         }
     }
     </script>
+{% else %}
+<h1>Veuillez vous connecter pour accéder à cette page web</h1>
+
+<a href="{% url 'login' %}">Se connecter</a>
+
+{% endif %}
 {% endblock %}
