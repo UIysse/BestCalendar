@@ -3,6 +3,7 @@
 {% load static %}
 {% block content %}
 {% if user.is_authenticated %}
+{% if perms.members.custom_permission %}
 <div style="display: flex; justify-content: space-between; align-items: center;">
     {{ start_date|date:'Y' }}, Semaine {{ start_date|date:'W' }}
     <div>
@@ -447,6 +448,10 @@
         });
     });
 </script>
+{% else %}
+  <!-- Content to be displayed if the user does not have the permission -->
+  <p>The user does not have the permission.</p>
+{% endif %}
 {% else %}
 <h1>Veuillez vous connecter pour accéder à cette page web</h1>
 

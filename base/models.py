@@ -2,12 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime, timedelta
 # Create your models here.
-class Topic(models.Model):
-    name = models.CharField(max_length=200)
-
-    def __str__(self) -> str:
-        return self.name
-    
 class Poste(models.Model):
     name = models.CharField(max_length=100)
     updated = models.DateTimeField(auto_now=True)

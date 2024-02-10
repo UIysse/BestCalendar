@@ -34,15 +34,6 @@ def home(request):
     context = {'employe' : employe}
     return render(request, 'base/home.html', context)
 
-def room(request, pk):
-    # room = Room.objects.get(id = pk)
-    context = {'rooms' : employelist}
-    return render(request, 'base/room.html', context)
-
-def createRoom(request):
-    context = {}
-    return render(request, 'base/room_form.html', context)
-
 def schedules_page(request):
     # Your logic for the schedules page goes here
     return render(request, 'base/schedules_page.html')
