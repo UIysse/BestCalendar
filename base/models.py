@@ -1,6 +1,8 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
+from django.contrib.auth.models import User, AbstractUser
 from datetime import datetime, timedelta
+from django.utils.crypto import get_random_string
 # Create your models here.
 class Poste(models.Model):
     name = models.CharField(max_length=100)
@@ -33,6 +35,9 @@ class Entreprise(models.Model):
 
     def __str__(self) -> str:
         return self.name
+    
+class CustomUser(AbstractUser):
+    entreprise = models.ForeignKey(Entreprise, on_delete=models.CASCADE, null=True, blank=True)
 
 class AdministrateurPlanning(models.Model):
     name = models.CharField(max_length=100)
@@ -51,8 +56,19 @@ class Employe(models.Model):
     firstname = models.CharField(max_length=200, default="Prénom")
     e_mail = models.CharField(max_length=200, default="default@example.com")
     phone_number = models.CharField(max_length=12, default="0634567890")
+    employee_CodePin = models.CharField(max_length=4, unique=True, blank=True, null=True)
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.employee_CodePin:
+            # Ensure uniqueness of the employee_number
+            while True:
+                unique_number = get_random_string(length=4, allowed_chars='0123456789')
+                if not Employe.objects.filter(employee_CodePin=unique_number).exists():
+                    self.employee_CodePin = unique_number
+                    break
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name + ' ' + self.firstname
@@ -86,13 +102,3 @@ class TeamPlanning(models.Model):
 
     def __str__(self):
         return self.date.strftime("%Y-%m-%d") + ' ' + self.Employe.firstname + ' ' + self.Employe.name + ' ' + str(self.id)
-
-class Message(models.Model):
-    user = models.ForeignKey(User, on_delete = models.CASCADE)
-    employe = models.ForeignKey(Employe, on_delete = models.CASCADE)
-    body = models.TextField(null=True)
-    updated = models.DateTimeField(auto_now=True)
-    created = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.body[0:50]

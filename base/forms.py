@@ -1,7 +1,7 @@
 # forms.py
 from django import forms
 from django.core.validators import EmailValidator
-from .models import Employe, TeamPlanning
+from .models import Employe, TeamPlanning, Entreprise
 
 class EmployeForm(forms.ModelForm):
     class Meta:
@@ -13,6 +13,14 @@ class EmployeForm(forms.ModelForm):
                      'phone_number' : 'Téléphone',
                        'e_mail' : 'E-mail',
                          'EntrepriseRattachée' : 'Entreprise employeur'}
+        
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super(EmployeForm, self).__init__(*args, **kwargs)
+        if user is not None and not user.is_anonymous:
+            self.fields['EntrepriseRattachée'].queryset = Entreprise.objects.filter(id=user.entreprise.id)
+
 
 class ModifyEmployeform(forms.ModelForm):
     class Meta:

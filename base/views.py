@@ -39,12 +39,33 @@ def schedules_page(request):
     return render(request, 'base/schedules_page.html')
 
 def team_members_page(request):
-    # Your logic for the team members page goes here
-    employe = Employe.objects.all()
+    if request.user.is_authenticated:
+        # Access the 'entreprise' attribute of the user
+        user_entreprise = request.user.entreprise
+        if user_entreprise is None:
+            # Do something with user_entreprise
+            return HttpResponse("L'administrateur doit vous assigner une entreprise")
+        else:
+            pass #Normal behaviour, the page is displayed
+    else:
+        return HttpResponse("Vous devez vous connecter pour accèder à cette page")
+    employe = Employe.objects.filter(EntrepriseRattachée=user_entreprise)
     context = {'employe' : employe}
     return render(request, 'base/team_members_page.html', context)
 
 def planning(request, year=None, week=None):
+    # Ensure the user is authenticated
+    if request.user.is_authenticated:
+        # Access the 'entreprise' attribute of the user
+        user_entreprise = request.user.entreprise
+
+        if user_entreprise is None:
+            # Do something with user_entreprise
+            return HttpResponse("L'administrateur doit vous assigner une entreprise")
+        else:
+            pass #Normal behaviour, the page is displayed
+    else:
+        return HttpResponse("Vous devez vous connecter pour accèder à cette page")
     if not year or not week:
         # Get the current week if no year and week are provided
         today = datetime.now()
@@ -69,7 +90,8 @@ def planning(request, year=None, week=None):
         {'date': start_date + timedelta(days=i), 'tasks': [{'date': start_date + timedelta(days=i), 'task': f'Task {i+1}'}]}
         for i in range(7)
     ]
-    employe = Employe.objects.all()
+    #employe = Employe.objects.all() #select the employees that belong to the same entreprise as the user
+    employe = Employe.objects.filter(EntrepriseRattachée=user_entreprise)
     teamPlanning = None
     if request.method == 'POST':
         form = ModifyPlanningForm(request.POST, instance=teamPlanning)
@@ -118,7 +140,8 @@ def planning(request, year=None, week=None):
             shifts_by_day[day] = shifts
             print(shifts)
         shifts_by_emp_and_day[emp.id] = shifts_by_day
-    print(shifts_by_day)
+    # if len(shifts_by_day) > 0:
+    #     print(shifts_by_day)
     context = {
         'days': days,
         'tasks': tasks,
@@ -141,7 +164,7 @@ def create_employe(request):
             form.save()
             return redirect('team_members_page')  # Redirect to the employee list page
     else:
-        form = EmployeForm()
+        form = EmployeForm(user=request.user)
 
     return render(request, 'base/create_employe.html', {'form': form})
 
