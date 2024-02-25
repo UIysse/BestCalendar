@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.auth.models import User, AbstractUser
 from datetime import datetime, timedelta
 from django.utils.crypto import get_random_string
+from django.utils.translation import gettext_lazy as _
 # Create your models here.
 class Poste(models.Model):
     name = models.CharField(max_length=100)
@@ -102,3 +103,23 @@ class TeamPlanning(models.Model):
 
     def __str__(self):
         return self.date.strftime("%Y-%m-%d") + ' ' + self.Employe.firstname + ' ' + self.Employe.name + ' ' + str(self.id)
+
+class Week(models.Model):
+    week_number = models.IntegerField(unique=True)
+    first_day = models.DateField(max_length=20)
+
+    def __str__(self):
+        return f"Week {self.week_number}: {self.first_day}"
+
+    class Meta:
+        ordering = ['week_number']
+
+    def save(self, *args, **kwargs):
+        """Override save to prevent modifications after creation."""
+        if self.pk:
+            return  # Prevent update if instance already exists
+        super(Week, self).save(*args, **kwargs)
+        
+    def get_week_days(self):
+        """Return a list of all days in this week."""
+        return [self.first_day + timedelta(days=i) for i in range(7)]

@@ -1,7 +1,7 @@
 # forms.py
 from django import forms
 from django.core.validators import EmailValidator
-from .models import Employe, TeamPlanning, Entreprise
+from .models import Employe, TeamPlanning, Entreprise, Week
 
 class EmployeForm(forms.ModelForm):
     class Meta:
@@ -72,3 +72,8 @@ class ContactForm(forms.Form):
     subject = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'placeholder': 'Sujet'}),
         required=True, label = "Sujet")
     message = forms.CharField(widget=forms.Textarea, required=True, label = "Message")
+
+class SelectionForm(forms.Form):
+    employees = forms.CharField(widget=forms.HiddenInput(), required=False)
+    weeks = forms.CharField(widget=forms.HiddenInput(), required=False)
+    days = forms.CharField(widget=forms.HiddenInput(), required=False)

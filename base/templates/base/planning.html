@@ -12,12 +12,12 @@
         <a class="bi bi-arrow-right-circle" style="font-size: 1.2em;" href="{% url 'planning_with_params' year=next_year week=next_week %}"></a>
     </div>
     <div>
-        <i class="bi bi-copy icon-overlay" style="font-size: 1.5em; padding-right: 5px; padding-left: 5px;" title="Copier des shifts"></i>
-        <i class="bi bi-trash icon-overlay" style="font-size: 1.5em; padding-right: 5px; padding-left: 5px;" title="Supprimer des shifts"></i>
-        <i class="bi bi-printer icon-overlay" style="font-size: 1.5em; padding-right: 5px; padding-left: 5px;" title="Imprimer le planning"></i>
+        <i class="bi bi-copy icon-overlay" style="font-size: 1.5em; padding-right: 5px; padding-left: 5px;" title="Copier des shifts" onclick = "CopyShifts()"></i>
+        <i class="bi bi-trash icon-overlay" style="font-size: 1.5em; padding-right: 5px; padding-left: 5px;" title="Supprimer des shifts" onclick = "DeleteShifts()"></i>
+        <i class="bi bi-printer icon-overlay" style="font-size: 1.5em; padding-right: 5px; padding-left: 5px;" title="Imprimer le planning" onclick="printTable()"></i>
     </div>
 </div>
-<table class = "my-table", border="1">
+<table class = "my-table", border="1" id = "table1">
     <thead>
         <tr>
             <th></th>
@@ -72,7 +72,7 @@
         {% endfor %}
     </tbody>
 </table>
-<!-- The Modal -->
+<!-- The Modal which handles single shifts stuff -->
 <div id="myModal" class="modal">
     <div class="modal-dialog" role="document">
         <!-- Modal content -->
@@ -110,7 +110,7 @@
                             <div class="invalid-feedback">{{ form.date.errors }}</div>
                         </div>
                     </div>
-                    <!-- Début -->
+                    <!-- Heure Début -->
                     <div class="form-group row">
                         <label for="{{ form.Heurededébut.id_for_label }}" class="col-sm-2 col-form-label">{{ form.Heurededébut.label }}</label>
                         <div class="col-sm-10">
@@ -119,7 +119,7 @@
                         </div>
                     </div>
 
-                    <!-- Fin -->
+                    <!-- Heure Fin -->
                     <div class="form-group row">
                         <label for="{{ form.heuredefin.id_for_label }}" class="col-sm-2 col-form-label">{{ form.heuredefin.label }}</label>
                         <div class="col-sm-10">
@@ -274,6 +274,7 @@
                                     </option>
                                 {% endfor %}
                             </select>
+                        </div>
                     </div>
                     <!-- Note -->
                     <div class="form-group row">
@@ -302,7 +303,163 @@
         </div>
     </div>
 </div>
+<!-- The Modal which copies shifts -->
+<div id="ModalCopy" class="modal">
+    <div class="modal-dialog" role="document">
+        <!-- Modal content -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="justify-content-end d-flex w-100">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true"></span>
+                    </button>
+                </div>
+            </div>
+            <!-- Body of modal -->
+            <div id="CopyShiftContent">
+                <h5 class="modal-title">Copiez des shifts</h5>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <div class="employee-list" style="max-height: 30vh; overflow-y: auto; padding: 10px; border: 1px solid #ccc;">
+                    {% for emp in employe %}
+                        <input type="checkbox" name="employe_{{ emp.id }}" id="employe_{{ emp.id }}"/>
+                        <span>{{ emp.name }} {{ emp.firstname }}</span>  <!-- Assuming your Employee model has a 'name' field -->
+                        </label><br>
+                    {% endfor %}
+                </div>
+                <h5 class="modal-title">Sélectionnez les semaines concernées</h5>
+                <div style="max-height: 30vh; overflow-y: auto; padding: 10px; border: 1px solid #ccc;">
+                    <table class="table table-hover" id="selectableTable">
+                    <tbody>
+                        {% for oneweekinside in weeks %}
+                            <tr id="week_{{ oneweekinside.week_number }}" >
+                            <td> S{{ oneweekinside.week_number }}, {{ oneweekinside.first_day|date:"l d F" }}</td>  <!-- Assuming your Employee model has a 'name' field -->
+                            </tr>
+                        {% endfor %}
+                        <!-- Add more rows as needed -->
+                    </tbody>
+                    </table>
+                </div>
+                <h6 class="modal-title">Sélectionnez les jours concernés</h6>
+                <div style="text-align: center;">
+                    <input type="checkbox" class="btn-check" id="btn-check-Lundi" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-check-Lundi">Lu</label>
+                    <input type="checkbox" class="btn-check" id="btn-check-Mardi" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-check-Mardi">Ma</label>
+                    <input type="checkbox" class="btn-check" id="btn-check-Mercredi" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-check-Mercredi">Me</label>
+                    <input type="checkbox" class="btn-check" id="btn-check-Jeudi" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-check-Jeudi">Je</label>
+                    <input type="checkbox" class="btn-check" id="btn-check-Vendredi" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-check-Vendredi">Ve</label>
+                    <input type="checkbox" class="btn-check" id="btn-check-Samedi" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-check-Samedi">Sa</label>
+                    <input type="checkbox" class="btn-check" id="btn-check-Dimanche" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-check-Dimanche">Di</label>
+                </div>
+                <!-- Hidden shiftId field -->
+                <div class="form-group row" style="display:none;">
+                    <input type="hidden" name="{{ selectionform.CopyMultipleShifts.name }}" id="CopyMultipleShiftsId">
+                </div>
+                {{ selectionform }}
+                <!-- Bouton Valider -->
+                <div class="modal-footer justify-content-end">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" name="actionButton" value="ValidateCopyMultipleShifts" id="modalSubmitBtn" class="btn btn-primary">Valider</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- The Modal which deletes shifts -->
+<div id="ModalDelete" class="modal">
+    <div class="modal-dialog" role="document">
+        <!-- Modal content -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="justify-content-end d-flex w-100">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true"></span>
+                    </button>
+                </div>
+            </div>
+            <!-- Body of modal -->
+            <div id="DeleteShiftContent">
+                <h5 class="modal-title">Supprimez plusieurs shifts</h5>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <div class="employee-list-delete-shifts" style="max-height: 30vh; overflow-y: auto; padding: 10px; border: 1px solid #ccc;">
+                    {% for emp in employe %}
+                        <input type="checkbox" name="employe_{{ emp.id }}" id="employe_{{ emp.id }}"/>
+                        <span>{{ emp.name }} {{ emp.firstname }}</span>  <!-- Assuming your Employee model has a 'name' field -->
+                        </label><br>
+                    {% endfor %}
+                </div>
+                <h5 class="modal-title">Sélectionnez les semaines concernées</h5>
+                <div style="max-height: 30vh; overflow-y: auto; padding: 10px; border: 1px solid #ccc;">
+                    <table class="table table-hover" id="selectableTable">
+                    <tbody>
+                        {% for oneweekinside in weeks %}
+                            <tr id="week_{{ oneweekinside.week_number }}" >
+                            <td> S{{ oneweekinside.week_number }}, {{ oneweekinside.first_day|date:"l d F" }}</td>  <!-- Assuming your Employee model has a 'name' field -->
+                            </tr>
+                        {% endfor %}
+                        <!-- Add more rows as needed -->
+                    </tbody>
+                    </table>
+                </div>
+                <h6 class="modal-title">Sélectionnez les jours concernés</h6>
+                <div style="text-align: center;">
+                    <input type="checkbox" class="btn-check" id="btn-check-delete-Lundi" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-check-delete-Lundi">Lu</label>
+                    <input type="checkbox" class="btn-check" id="btn-check-delete-Mardi" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-check-delete-Mardi">Ma</label>
+                    <input type="checkbox" class="btn-check" id="btn-check-delete-Mercredi" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-check-delete-Mercredi">Me</label>
+                    <input type="checkbox" class="btn-check" id="btn-check-delete-Jeudi" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-check-delete-Jeudi">Je</label>
+                    <input type="checkbox" class="btn-check" id="btn-check-delete-Vendredi" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-check-delete-Vendredi">Ve</label>
+                    <input type="checkbox" class="btn-check" id="btn-check-delete-Samedi" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-check-delete-Samedi">Sa</label>
+                    <input type="checkbox" class="btn-check" id="btn-check-delete-Dimanche" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-check-delete-Dimanche">Di</label>
+                </div>
+                {{ selectionform }}
+                <!-- Bouton Valider -->
+                <div class="modal-footer justify-content-end">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" name="actionButton" value="ValidateDeleteMultipleShifts" id="modalDeleteShiftsSubmitBtn" class="btn btn-primary">Valider</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 <script> 
+    function printTable() {
+        var tableContent = document.getElementById("table1").outerHTML;
+        var newWin = window.open('', '_blank');
+        newWin.document.open();
+        newWin.document.write('<html><body onload="window.print()">' + tableContent + '</body></html>');
+        newWin.document.close();
+        setTimeout(function(){newWin.close();}, 10);
+    }
+    var modalCopy = document.getElementById("ModalCopy"); //move this into the function ?
+    var modalDelete = document.getElementById("ModalDelete"); //move this into the function ?
+    function CopyShifts(){
+        console.log("copy")
+        modalCopy.querySelector('.modal-title').textContent = 'Copiez plusieurs shifts de la semaine en cours';
+        modalCopy.style.display = "block";
+        document.getElementById('CopyShiftContent').style.display = 'block';
+    }
+    function DeleteShifts(){
+        console.log("delete")
+        modalDelete.querySelector('.modal-title').textContent = 'Supprimez plusieurs shifts';
+        modalDelete.style.display = "block";
+        document.getElementById('DeleteShiftContent').style.display = 'block';
+    }
     function convertTo24HourFormat(timeString) {
         let [time, modifier] = timeString.split(' ');
         let [hours, minutes] = time.split(':');
@@ -356,57 +513,57 @@
 
     //function to open the modal that defaults to edit shift
     function openInnerModal(event, cell) {
-    // Stop the event from propagating to the outer table cell
-    console.log("Inner modal function called");
-    event.stopPropagation();
-    // Retrieve data from the cell's data attributes
-    var startTime = cell.getAttribute('data-start-time');
-    var endTime = cell.getAttribute('data-end-time');
-    var note = cell.getAttribute('data-note');
-    modal.querySelector('.modal-title').textContent = 'Modifier le shift de ';
-    modal.style.display = "block";
-    document.getElementById('nouveauShiftContent').style.display = 'none';
-    document.getElementById('nouvelAbsenceContent').style.display = 'none';
-    document.getElementById('EditerShiftContent').style.display = 'none';
-    //Fill Edit shift form
-    document.getElementById('EditShiftDate').value = cell.getAttribute('data-date');
-    document.getElementById('EditShiftHeurededébut').value = convertTo24HourFormat(cell.getAttribute('data-Heurededébut'));
-    document.getElementById('EditShiftheuredefin').value = convertTo24HourFormat(cell.getAttribute('data-end-time'));
-    document.getElementById('EditShiftduréepause').value = convertTo24HourFormat(cell.getAttribute('data-duree-pause'));
-    document.getElementById('EditShitid_Employe').value = cell.getAttribute('data-EmployeId');
-    document.getElementById('EditShiftTypeFormId').value = "EditShift";
-    document.getElementById('EditShiftShift_Id').value = cell.getAttribute('data-shiftId');
-    document.getElementById('EditShiftPoste').value = cell.getAttribute('data-Poste');
-    document.getElementById('EditShiftnote').value = cell.getAttribute('data-note');
-    document.getElementById('EditerShiftContent').style.display = 'block';
-    //Fill nouveau shift form
-    modal.querySelector('[name="date"]').value = cell.getAttribute('data-date');
-    modal.querySelector('#id_Employe').value = cell.getAttribute('data-EmployeId');
-    document.getElementById('NouveauShiftTypeFormId').value = "AddShift";
-    //Fill nouvelle absence form
-    //make edition page active only
-    var paginationItems = document.querySelectorAll('.pagination .page-item');
-    
-    // Remove 'active' class from all pagination items
-    paginationItems.forEach(function(item) {
-        item.classList.remove('active');
+        // Stop the event from propagating to the outer table cell
+        console.log("Inner modal function called");
+        event.stopPropagation();
+        // Retrieve data from the cell's data attributes
+        var startTime = cell.getAttribute('data-start-time');
+        var endTime = cell.getAttribute('data-end-time');
+        var note = cell.getAttribute('data-note');
+        modal.querySelector('.modal-title').textContent = 'Modifier le shift de ';
+        modal.style.display = "block";
+        document.getElementById('nouveauShiftContent').style.display = 'none';
+        document.getElementById('nouvelAbsenceContent').style.display = 'none';
+        document.getElementById('EditerShiftContent').style.display = 'none';
+        //Fill Edit shift form
+        document.getElementById('EditShiftDate').value = cell.getAttribute('data-date');
+        document.getElementById('EditShiftHeurededébut').value = convertTo24HourFormat(cell.getAttribute('data-Heurededébut'));
+        document.getElementById('EditShiftheuredefin').value = convertTo24HourFormat(cell.getAttribute('data-end-time'));
+        document.getElementById('EditShiftduréepause').value = convertTo24HourFormat(cell.getAttribute('data-duree-pause'));
+        document.getElementById('EditShitid_Employe').value = cell.getAttribute('data-EmployeId');
+        document.getElementById('EditShiftTypeFormId').value = "EditShift";
+        document.getElementById('EditShiftShift_Id').value = cell.getAttribute('data-shiftId');
+        document.getElementById('EditShiftPoste').value = cell.getAttribute('data-Poste');
+        document.getElementById('EditShiftnote').value = cell.getAttribute('data-note');
+        document.getElementById('EditerShiftContent').style.display = 'block';
+        //Fill nouveau shift form
+        modal.querySelector('[name="date"]').value = cell.getAttribute('data-date');
+        modal.querySelector('#id_Employe').value = cell.getAttribute('data-EmployeId');
+        document.getElementById('NouveauShiftTypeFormId').value = "AddShift";
+        //Fill nouvelle absence form
+        //make edition page active only
+        var paginationItems = document.querySelectorAll('.pagination .page-item');
+        
+        // Remove 'active' class from all pagination items
+        paginationItems.forEach(function(item) {
+            item.classList.remove('active');
+        });
+        //enable the last pagination
+        paginationItems[2].classList.remove('disabled');
+
+        // Add 'active' class to the third pagination item
+        // Note: Array indices are zero-based, so the third item is at index 2
+        if (paginationItems.length > 2) {
+            paginationItems[2].classList.add('active');
+        }
+    }
+    //Makes sure clicking (X) will close the right modal
+    document.querySelectorAll('.btn-close').forEach(function(btn) {
+        btn.onclick = function() {
+            // Directly close the parent modal of the clicked button
+            this.closest('.modal').style.display = "none";
+        }
     });
-    //enable the last pagination
-    paginationItems[2].classList.remove('disabled');
-
-    // Add 'active' class to the third pagination item
-    // Note: Array indices are zero-based, so the third item is at index 2
-    if (paginationItems.length > 2) {
-        paginationItems[2].classList.add('active');
-    }
-
-    }
-    // Get the element that closes the modal
-    var span = document.getElementsByClassName("btn-close")[0];
-    // When the user clicks on <span> (x), close the modal
-    span.onclick = function() {
-        modal.style.display = "none";
-    }
     //close on all annuler boutons
     var cancelButtons = document.getElementsByClassName("btn btn-secondary");
 
@@ -417,10 +574,108 @@
     });
     // When the user clicks anywhere outside of the modal, close it
     window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = "none";
-        }
+    if (event.target == modalCopy) {
+        modalCopy.style.display = "none";
+    } else if (event.target == modalDelete) {
+        modalDelete.style.display = "none";
+    } else if (event.target == modal) {
+        modal.style.display = "none";
     }
+    // Add similar conditions for other modals
+}
+document.addEventListener('DOMContentLoaded', function() {
+  const rows = document.querySelectorAll('#selectableTable tr');
+  
+  // Start loop from 1 to skip the first row (typically the header)
+  rows.forEach((row, index) => {
+    row.addEventListener('click', () => {
+      // Toggle 'table-active' class on the clicked row
+      row.classList.toggle('table-primary');
+    });
+  });
+});
+//manage the submit of copyshiftsmodal
+document.getElementById('modalSubmitBtn').addEventListener('click', function() {
+    // Find all checked checkboxes within the employee list
+    var checkedCheckboxes = document.querySelectorAll('.employee-list input[type="checkbox"]:checked');
+    
+    // Map over each checkbox to extract the ID part of the `id` attribute
+    var selectedEmployeeIds = Array.from(checkedCheckboxes).map(function(checkbox) {
+        // Assuming the id is in the format "employe_ID"
+        return checkbox.id.replace('employe_', '');
+    });
+
+    // Now, selectedEmployeeIds contains all the IDs of the checked employees
+    console.log(selectedEmployeeIds); // For demonstration, log the IDs to the console
+    //rows
+    var selectedRows = document.querySelectorAll('#ModalCopy .table.table-hover tbody tr.table-primary');
+        // Extract the week_number from the row IDs, assuming IDs are in the format 'week_X'
+        var selectedWeekIds = Array.from(selectedRows).map(function(row) {
+            return row.id.replace('week_', '');
+        });
+
+        // Now, selectedWeekIds contains the IDs of all selected (primary) weeks
+        console.log(selectedWeekIds); // For demonstration purposes
+        // Select all checked checkboxes within the modal
+    var checkedButtons = document.querySelectorAll('#ModalCopy .btn-check:checked');
+    
+    // Initialize an array to hold the ids of checked checkboxes
+    var activeDays = [];
+    
+    // Iterate over each checked checkbox and extract its id
+    checkedButtons.forEach(function(checkbox) {
+        activeDays.push(checkbox.id.replace('btn-check-', '')); // Removes the prefix to get the day
+    });
+    
+    // Now, activeDays contains the list of ids (days) of all active buttons
+    console.log(activeDays); // For demonstration, log the active days to the console
+
+    // Populate the hidden form fields with these values
+    modalCopy.querySelector('input[name="employees"]').value = selectedEmployeeIds.join(',');
+    modalCopy.querySelector('input[name="weeks"]').value = selectedWeekIds.join(',');
+    modalCopy.querySelector('input[name="days"]').value = activeDays.join(',');
+});
+//manage the submit of deleteshiftmodal
+document.getElementById('modalDeleteShiftsSubmitBtn').addEventListener('click', function() {
+    // Find all checked checkboxes within the employee list
+    var checkedCheckboxes = document.querySelectorAll('.employee-list-delete-shifts input[type="checkbox"]:checked');
+    
+    // Map over each checkbox to extract the ID part of the `id` attribute
+    var selectedEmployeeIds = Array.from(checkedCheckboxes).map(function(checkbox) {
+        // Assuming the id is in the format "employe_ID"
+        return checkbox.id.replace('employe_', '');
+    });
+
+    // Now, selectedEmployeeIds contains all the IDs of the checked employees
+    console.log(selectedEmployeeIds); // For demonstration, log the IDs to the console
+    //rows
+    var selectedRows = document.querySelectorAll('#ModalDelete .table.table-hover tbody tr.table-primary');
+        // Extract the week_number from the row IDs, assuming IDs are in the format 'week_X'
+        var selectedWeekIds = Array.from(selectedRows).map(function(row) {
+            return row.id.replace('week_', '');
+        });
+
+        // Now, selectedWeekIds contains the IDs of all selected (primary) weeks
+        console.log(selectedWeekIds); // For demonstration purposes
+        // Select all checked checkboxes within the modal
+    var checkedButtons = document.querySelectorAll('#ModalDelete .btn-check:checked');
+    
+    // Initialize an array to hold the ids of checked checkboxes
+    var activeDays = [];
+    
+    // Iterate over each checked checkbox and extract its id
+    checkedButtons.forEach(function(checkbox) {
+        activeDays.push(checkbox.id.replace('btn-check-delete-', '')); // Removes the prefix to get the day
+    });
+    
+    // Now, activeDays contains the list of ids (days) of all active buttons
+    console.log(activeDays); // For demonstration, log the active days to the console
+
+    // Populate the hidden form fields with these values
+    modalDelete.querySelector('input[name="employees"]').value = selectedEmployeeIds.join(',');
+    modalDelete.querySelector('input[name="weeks"]').value = selectedWeekIds.join(',');
+    modalDelete.querySelector('input[name="days"]').value = activeDays.join(',');
+});
 </script>
 <script> // code qui gere le contenu modal displayed à partir d'un click de pagination
     document.querySelectorAll('.pagination .page-link').forEach(function(link) {
