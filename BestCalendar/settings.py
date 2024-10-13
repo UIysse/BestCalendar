@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-2zc16%4n5jh%^p0cv8gn-17(kdbg8aip_87i#$826f@p0lmimk
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['161.35.85.238']
+ALLOWED_HOSTS = ['161.35.85.238', '127.0.0.1', 'pharmashift.fr', 'www.pharmashift.fr']
 
 AUTH_USER_MODEL = 'base.CustomUser'
 
@@ -125,7 +125,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 import os
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 # Add or update STATIC_ROOT

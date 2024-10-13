@@ -166,7 +166,7 @@ def planning(request, year=None, week=None):
             if not shifts.exists():
                 continue
             shifts_by_day[day] = shifts
-            print(shifts)
+            #print(shifts)
         shifts_by_emp_and_day[emp.id] = shifts_by_day
     # if len(shifts_by_day) > 0:
     #     print(shifts_by_day)
