@@ -66,6 +66,12 @@ def planning(request, year=None, week=None):
             pass #Normal behaviour, the page is displayed
     else:
         return HttpResponse("Vous devez vous connecter pour accèder à cette page")
+    # Handles a date picked from datepicker
+    selected_date = request.GET.get('date')
+    if selected_date:
+        selected_date = datetime.strptime(selected_date, '%Y-%m-%d')
+        year, week, _ = selected_date.isocalendar()
+    # end of datepicker code 
     if not year or not week:
         # Get the current week if no year and week are provided
         today = datetime.now()

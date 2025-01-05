@@ -8,7 +8,7 @@
     {{ start_date|date:'Y' }}, Semaine {{ start_date|date:'W' }}
     <div>
         <a class="bi bi-arrow-left-circle" style="font-size: 1.2em;" href="{% url 'planning_with_params' year=prev_year week=prev_week %}"></a>
-        <input type="date" id="datePicker" name="date">
+        <input type="date" id="datePicker" name="date" value="{{ start_date|date:'Y-m-d' }}">
         <a class="bi bi-arrow-right-circle" style="font-size: 1.2em;" href="{% url 'planning_with_params' year=next_year week=next_week %}"></a>
     </div>
     <div>
@@ -583,6 +583,15 @@
     }
     // Add similar conditions for other modals
 }
+//manages user clicks on datepicker date
+document.getElementById('datePicker').addEventListener('change', function() {
+        const selectedDate = this.value;
+
+        if (selectedDate) {
+            // Redirect to the URL with the selected date as a GET parameter
+            window.location.href = `{% url 'planning' %}?date=${selectedDate}`;
+        }
+    });
 document.addEventListener('DOMContentLoaded', function() {
   const rows = document.querySelectorAll('#selectableTable tr');
   
