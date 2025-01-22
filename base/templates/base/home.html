@@ -2,11 +2,169 @@
 
 {% block content %}
 
-<div>
-    <h1>Bienvenue</h1>
-    </ul>
-</div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmaShift - Gestion de Planning Simplifiée</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- CSS Styles -->
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        header {
+            background: linear-gradient(90deg, #4e73df, #2c9faf);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+        }
+        header h1 {
+            font-size: 2.5rem;
+            margin: 0;
+        }
+        header p {
+            font-size: 1.2rem;
+            margin: 10px 0 0;
+        }
+        .cta-buttons {
+            margin-top: 20px;
+        }
+        .cta-buttons a {
+            text-decoration: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin: 5px;
+            font-size: 1rem;
+            display: inline-block;
+        }
+        .cta-buttons .btn-primary {
+            background-color: #f05340;
+        }
+        .cta-buttons .btn-secondary {
+            background-color: #2c9faf;
+        }
+        section {
+            padding: 60px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        section h2 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2rem;
+            color: #4e73df;
+        }
+        .features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .feature {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            flex: 1 1 calc(33.333% - 40px);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        .feature:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .feature i {
+            font-size: 3rem;
+            color: #4e73df;
+        }
+        .feature h3 {
+            margin: 15px 0 10px;
+            font-size: 1.5rem;
+            color: #333;
+        }
+        .feature p {
+            font-size: 1rem;
+            color: #666;
+        }
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+        }
+        footer a {
+            color: #f05340;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
 
+<header>
+    <h1>Bienvenue sur PharmaShift</h1>
+    <p>La solution ultime pour planifier et gérer vos shifts d'équipe facilement.</p>
+    <div class="cta-buttons">
+        <a href="#features" class="btn-primary">Découvrir les fonctionnalités</a>
+        <a href="#signup" class="btn-secondary">Commencer maintenant</a>
+    </div>
+</header>
+
+<section id="features">
+    <h2>Fonctionnalités clés</h2>
+    <div class="features">
+        <div class="feature">
+            <i class="fas fa-calendar-check"></i>
+            <h3>Gestion des plannings</h3>
+            <p>Planifiez vos shifts en un clic grâce à notre interface intuitive et rapide.</p>
+        </div>
+        <div class="feature">
+            <i class="fas fa-users"></i>
+            <h3>Suivi des équipes</h3>
+            <p>Visualisez les disponibilités et les rotations de vos employés en temps réel.</p>
+        </div>
+        <div class="feature">
+            <i class="fas fa-chart-line"></i>
+            <h3>Rapports détaillés</h3>
+            <p>Générez des rapports clairs sur les heures travaillées, absences, et plus encore.</p>
+        </div>
+        <div class="feature">
+            <i class="fas fa-mobile-alt"></i>
+            <h3>Application mobile</h3>
+            <p>Accédez à vos plannings depuis n'importe où grâce à notre application mobile.</p>
+        </div>
+        <div class="feature">
+            <i class="fas fa-bell"></i>
+            <h3>Notifications</h3>
+            <p>Recevez des rappels et alertes pour vos shifts directement sur votre appareil.</p>
+        </div>
+        <div class="feature">
+            <i class="fas fa-lock"></i>
+            <h3>Sécurité des données</h3>
+            <p>Vos informations sont protégées avec des normes de sécurité de haut niveau.</p>
+        </div>
+    </div>
+</section>
+
+<section id="signup">
+    <h2>Prêt à commencer ?</h2>
+    <p style="text-align: center;">Rejoignez des centaines d'entreprises qui utilisent PharmaShift pour simplifier leur gestion de planning.</p>
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="/signup" class="btn-primary">Créer un compte gratuitement</a>
+    </div>
+</section>
+
+<footer>
+    <p>&copy; 2025 ShiftMaster. Tous droits réservés. <a href="/terms">Conditions générales</a></p>
+</footer>
+
+</body>
 
 
 

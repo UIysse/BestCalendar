@@ -32,14 +32,14 @@
                 <td style = "font-size: 16px;">{{ emp.firstname }} {{ emp.name }}</td>
                 {% for day in days %}
                     <!-- Shift code here -->
-                                <td onclick="openModal(this, '{{ emp.id }}', '{{ emp.name }}', '{{ emp.firstname }}', '{{ day|date:'Y-m-d' }}')">
+                                <td onclick="openModal(this, '{{ emp.id }}', '{{ emp.name }}', '{{ emp.firstname }}', '{{ emp.Poste.id }}', '{{ day|date:'Y-m-d' }}')">
                                     <table border="1">
                                         {% for key, value in shifts_by_emp_and_day.items %}
                                             {% if emp.id == key %}<!-- test sur employe match-->
                                                 {% for key1, value1 in value.items %}
                                                     {% if day == key1 %} <!-- test sur day match-->
                                                         {% for nitem in value1 %}
-                                                            <tr style="background-color:{{ nitem.Poste.couleur }};">
+                                                            <tr style="background-color: {% if nitem.is_overtime %}red{% elif nitem.is_absence%}lightgray{% else %}{{ nitem.Poste.couleur }}{% endif %};"><!-- si heure sup couleur rouge autrement couleur du poste-->
                                                                 <td onclick="openInnerModal(event, this)"
                                                                     data-date = "{{ day|date:'Y-m-d' }}"
                                                                     data-Heurededébut="{{ nitem.Heurededébut }}"
@@ -55,6 +55,9 @@
                                                                     {{nitem.Heurededébut}} - {{nitem.heuredefin}}
                                                                     {% if nitem.note %}
                                                                         <i class="bi bi-file-text"></i>
+                                                                    {% endif %}
+                                                                    {% if nitem.is_absence %}
+                                                                          - {{nitem.TypeAbsence}}
                                                                     {% endif %}
                                                                     <div style="width: 80%; height: 20px; background-color: {{ nitem.Poste.couleur }}; overflow: hidden; text-overflow: ellipsis ;">{{nitem.Poste}}</div>
                                                                 </td>
@@ -142,10 +145,29 @@
                     <div class="form-group row">
                         <label for="{{ form.Poste.id_for_label }}" class="col-sm-2 col-form-label">{{ form.Poste.label }}</label>
                         <div class="col-sm-10">
-                            {{ form.Poste|add_class:'form-control' }}
-                            <div class="invalid-feedback">{{ form.Poste.errors }}</div>
+                            <select name="{{ form.Poste.name }}" id="NewShiftPoste" class="form-select" value="{{ form.Poste.value|default_if_none:'' }}">
+                                {% for poste in form.Poste.field.queryset %}
+                                    <option value="{{ poste.id }}">
+                                        {{ poste.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
+                <!-- option heure sup -->
+                <div class="form-group row">
+                    <label for="{{ form.checkbox_field_heuresup.id_for_label }}" class="col-sm-9 col-form-label">
+                        {{ form.checkbox_field_heuresup.label }}
+                    </label>
+                    <div class="col-sm-3 d-flex align-items-start">
+                        <input type="checkbox" name="{{ form.checkbox_field_heuresup.name }}" 
+                               id="HeureSupCheckbox" 
+                               class="form-check-input"
+                               style="margin-top: 18px;" 
+                               {% if form.checkbox_field_heuresup.value %}checked{% endif %}>
+                        <div class="invalid-feedback">{{ form.checkbox_field_heuresup.errors }}</div>
+                    </div>
+                </div>
                     <!-- Note -->
                     <div class="form-group row">
                         <label for="{{ form.heuredefin.id_for_label }}" class="col-sm-2 col-form-label">{{ form.note.label }}</label>
@@ -168,59 +190,96 @@
             <!-- Content for Nouvelle absence -->
             <div id="nouvelAbsenceContent" style="display: none;">
                 <h5 class="modal-title">Nouvelle absence pour</h5>
-                <!-- TypeAbsence -->
-                <div class="form-group">
-                    <label for="{{ form.TypeAbsence.id_for_label }}">{{ form.TypeAbsence.label }}</label>
-                    {{ form.TypeAbsence }}
-                    {% if form.TypeAbsence.errors %}
-                        <div class="invalid-feedback">
-                            {{ form.TypeAbsence.errors }}
+                <form method="post" action="" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    <!-- TypeAbsence -->
+                    <div class="form-group">
+                        <label for="{{ form.TypeAbsence.id_for_label }}">{{ form.TypeAbsence.label }}</label>
+                        {{ form.TypeAbsence }}
+                        {% if form.TypeAbsence.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.TypeAbsence.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <!-- Date debut absence -->
+                    <div class="form-group row">
+                        <label for="{{ form.date.id_for_label }}" class="col-sm-2 col-form-label">{{ form.date.label }}</label>
+                        <div class="col-sm-10">
+                            <input type="date" name="{{ form.date.name }}" id="NewAbsenceStartDate" class="form-control" value="{{ form.date.value|default_if_none:'' }}">
+                            <div class="invalid-feedback">{{ form.date.errors }}</div>
                         </div>
-                    {% endif %}
-                </div>
-                <!-- Début -->
-                <div class="form-group row">
-                    <label for="{{ form.Heurededébut.id_for_label }}" class="col-sm-2 col-form-label">{{ form.Heurededébut.label }}</label>
-                    <div class="col-sm-10">
-                        <input type="time" name="{{ form.Heurededébut.name }}" id="NouvelleAbsenceHeurededébut" class="form-control" value="{{ form.Heurededébut.value|default_if_none:'' }}">
-                        <div class="invalid-feedback">{{ form.Heurededébut.errors }}</div>
                     </div>
-                </div>
+                    <!-- Date fin -->
+                    <div class="form-group row">
+                        <label for="{{ form.second_date.id_for_label }}" class="col-sm-2 col-form-label">{{ form.second_date.label }}</label>
+                        <div class="col-sm-10">
+                            <input type="date" name="{{ form.second_date.name }}" id="NewAbsenceEndDate" class="form-control" value="{{ form.second_date.value|default_if_none:'' }}">
+                            <div class="invalid-feedback">{{ form.second_date.errors }}</div>
+                        </div>
+                    </div>
+                    <!-- Début -->
+                    <div class="form-group row">
+                        <label for="{{ form.Heurededébut.id_for_label }}" class="col-sm-2 col-form-label">{{ form.Heurededébut.label }}</label>
+                        <div class="col-sm-10">
+                            <input type="time" name="{{ form.Heurededébut.name }}" id="NouvelleAbsenceHeurededébut" class="form-control" value="{{ form.Heurededébut.value|default_if_none:'' }}">
+                            <div class="invalid-feedback">{{ form.Heurededébut.errors }}</div>
+                        </div>
+                    </div>
 
-                <!-- Fin -->
-                <div class="form-group row">
-                    <label for="{{ form.heuredefin.id_for_label }}" class="col-sm-2 col-form-label">{{ form.heuredefin.label }}</label>
-                    <div class="col-sm-10">
-                        <input type="time" name="{{ form.heuredefin.name }}" id="NouvelleAbsenceheuredefin" class="form-control" value="{{ form.heuredefin.value|default_if_none:'' }}">
-                        <div class="invalid-feedback">{{ form.heuredefin.errors }}</div>
+                    <!-- Fin -->
+                    <div class="form-group row">
+                        <label for="{{ form.heuredefin.id_for_label }}" class="col-sm-2 col-form-label">{{ form.heuredefin.label }}</label>
+                        <div class="col-sm-10">
+                            <input type="time" name="{{ form.heuredefin.name }}" id="NouvelleAbsenceheuredefin" class="form-control" value="{{ form.heuredefin.value|default_if_none:'' }}">
+                            <div class="invalid-feedback">{{ form.heuredefin.errors }}</div>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Pause -->
-                <div class="form-group row">
-                    <label for="{{ form.duréepause.id_for_label }}" class="col-sm-2 col-form-label">{{ form.duréepause.label }}</label>
-                    <div class="col-sm-10">
-                        <input type="time" name="{{ form.duréepause.name }}" id="NouvelleAbsenceduréepause" class="form-control" value="{{ form.duréepause.value|default_if_none:'' }}">
-                        <div class="invalid-feedback">{{ form.duréepause.errors }}</div>
+                    <!-- Pause -->
+                    <div class="form-group row">
+                        <label for="{{ form.duréepause.id_for_label }}" class="col-sm-2 col-form-label">{{ form.duréepause.label }}</label>
+                        <div class="col-sm-10">
+                            <input type="time" name="{{ form.duréepause.name }}" id="NouvelleAbsenceduréepause" class="form-control" value="{{ form.duréepause.value|default_if_none:'' }}">
+                            <div class="invalid-feedback">{{ form.duréepause.errors }}</div>
+                        </div>
                     </div>
-                </div>
-                <!-- Note -->
-                <div class="form-group row">
-                    <label for="{{ form.heuredefin.id_for_label }}" class="col-sm-2 col-form-label">{{ form.note.label }}</label>
-                    <div class="col-sm-10">
-                        {{ form.note|add_class:'form-control' }}
-                        <div class="invalid-feedback">{{ form.note.errors }}</div>
+                    <!-- Employe as a hidden field -->
+                    <input type="hidden" name="Employe" id="id_Employe_absent">
+                    <!-- Poste -->
+                    <input type="hidden" name="Poste" id="id_Poste_absent">
+                    <!-- option suppression des shifts -->
+                    <div class="form-group row">
+                        <label for="{{ form.checkbox_field.id_for_label }}" class="col-sm-9 col-form-label">
+                            {{ form.checkbox_field.label }}
+                        </label>
+                        <div class="col-sm-3 d-flex align-items-start">
+                            <input type="checkbox" name="{{ form.checkbox_field.name }}" 
+                                id="NewAbsenceCheckbox" 
+                                class="form-check-input"
+                                style="margin-top: 18px;" 
+                                {% if form.checkbox_field.value %}checked{% endif %}>
+                            <div class="invalid-feedback">{{ form.checkbox_field.errors }}</div>
+                        </div>
                     </div>
-                </div>
-                <!-- Hidden Form type field -->
-                <div class="form-group row" style="display:none;">
-                    <input type="hidden" name="{{ form.action.name }}" id="NouvelleAbsenceTypeFormId">
-                </div>
-                <!-- Bouton Valider -->
-                <div class="modal-footer justify-content-end">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary">Valider</button>
-                </div>
+                    <!-- Note -->
+                    <div class="form-group row">
+                        <label for="{{ form.heuredefin.id_for_label }}" class="col-sm-2 col-form-label">{{ form.note.label }}</label>
+                        <div class="col-sm-10">
+                            {{ form.note|add_class:'form-control' }}
+                            <div class="invalid-feedback">{{ form.note.errors }}</div>
+                        </div>
+                    </div>
+                    <!-- Hidden Form type field -->
+                    <div class="form-group row" style="display:none;">
+                        <input type="hidden" name="{{ form.action.name }}" id="NouvelleAbsenceTypeFormId">
+                    </div>
+                    <!-- Bouton Valider -->
+                    <div class="modal-footer justify-content-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary">Valider</button>
+                    </div>
+                </form>
             </div>
             <!-- Content for edit shift en utilisant shift id-->
             <div id="EditerShiftContent" style="display: none;">
@@ -483,11 +542,31 @@
     var modal = document.getElementById("myModal"); //move this into the function ?
     
     // Function to open the modal that defaults to a New Shift
-    function openModal(td, empId, empName, empFirstName, date) {
+    function openModal(td, empId, empName, empFirstName, empPoste, date) {
         //modal.querySelector('[name="Employe"]').value = empId;
         modal.querySelector('[name="date"]').value = date;
         modal.querySelector('#id_Employe').value = empId;
+        modal.querySelector('#id_Employe_absent').value = empId;
+        var posteField = document.getElementById('NewShiftPoste');
+        console.log('Modal State:', modal.style.display);
+        console.log('Poste Field:', posteField);
+        console.log('Dropdown Options:', Array.from(posteField.options).map(option => ({
+            value: option.value,
+            text: option.text
+        })));
+        if (posteField) {
+            // Log dropdown options for debugging
+
+            // Set the dropdown value directly
+            posteField.value = empPoste;
+            modal.querySelector('#id_Poste_absent').value = empPoste;
+            // Log the updated value
+            //console.log('Set Poste field value to:', posteField.value);
+        } else {
+            console.error('Poste dropdown (EditShiftPoste) not found.');
+        }
         document.getElementById('NouveauShiftTypeFormId').value = "AddShift";
+        document.getElementById('NouvelleAbsenceTypeFormId').value = "NouvelleAbsence";
         // Update the modal title
         modal.querySelector('.modal-title').textContent = 'Nouveau shift pour ' + empName + ' ' + empFirstName;
         modal.style.display = "block";
@@ -541,6 +620,7 @@
         modal.querySelector('#id_Employe').value = cell.getAttribute('data-EmployeId');
         document.getElementById('NouveauShiftTypeFormId').value = "AddShift";
         //Fill nouvelle absence form
+        document.getElementById('NouvelleAbsenceTypeFormId').value = "NouvelleAbsence";
         //make edition page active only
         var paginationItems = document.querySelectorAll('.pagination .page-item');
         

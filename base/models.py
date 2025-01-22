@@ -16,6 +16,8 @@ class Poste(models.Model):
         ('#96bcfa', 'Bleu'),
         ('#b7fa96', 'Vert'),
         ('#faf296', 'Jaune'),
+        ('#FF0000', 'Rouge'), 
+        ('#808080', 'Gris'),  # Couleur gris ajoutée
     ]
 
     couleur = models.CharField(
@@ -87,6 +89,9 @@ class TeamPlanning(models.Model):
         ('', "Sélectionnez un type d'absence"),  # Default empty option
         ('Congé sans solde', 'Congé sans solde'),
         ('Congé payé', 'Congé payé'),
+        ('Arrêt de travail', 'Arrêt de travail'),
+        ('Absence injustifiée', 'Absence injustifiée'),
+        ('Autre..', 'Autre..'),
     ]
 
     TypeAbsence = models.CharField(
@@ -94,6 +99,13 @@ class TeamPlanning(models.Model):
         choices=ABSENCE_CHOICES,
         default='Congé sans solde'  # Default 
     )
+
+    # New boolean field for overtime
+    is_overtime = models.BooleanField(default=False, verbose_name="Shift en heures supplémentaires")
+
+        # New boolean field for leave
+    is_absence = models.BooleanField(default=False, verbose_name="Absence")
+
     def LoadMydict():
         pass
 

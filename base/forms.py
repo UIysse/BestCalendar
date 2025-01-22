@@ -30,6 +30,11 @@ class ModifyEmployeform(forms.ModelForm):
 class ModifyPlanningForm(forms.ModelForm):
     #employe fill par cellule
     date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}), label='Date')#initial fill par cellule
+    second_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        label="Fin de l'absence"
+    )
     Heurededébut = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}), label='Début', initial="09:00")
     heuredefin = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}), label='Fin', initial="18:00")
     duréepause = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}), label='Pause', initial="01:00")
@@ -46,6 +51,14 @@ class ModifyPlanningForm(forms.ModelForm):
         required=False,
         label="", #left empty for better design but originally was "type d'absence"
         widget=forms.Select(attrs={'class': 'form-select'})  # Using Bootstrap class as an example
+    )
+    checkbox_field = forms.BooleanField(
+        required=False,  # Optional if the checkbox is not mandatory
+        label="Supprimer les autres shifts sur cette période"
+    )
+    checkbox_field_heuresup = forms.BooleanField(
+        required=False,  # Optional if the checkbox is not mandatory
+        label="Heure(s) supplémentaire(s)"
     )
     # Modifier the type of the form below
     ACTION_CHOICES = [

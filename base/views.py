@@ -25,6 +25,8 @@ def contact(request):
         form = ContactForm()
     return render(request, 'base/contact.html', {'form': form})
 
+def badgeuse(request):
+    return render(request, 'base/badgeuse.html')
 
 def success(request):
    return render(request, 'base/success.html')
@@ -104,6 +106,7 @@ def planning(request, year=None, week=None):
             form = ModifyPlanningForm(request.POST, instance=teamPlanning)
             print(form)
             if form.is_valid():
+                print(form.cleaned_data)
                 if form.cleaned_data['action'] == "EditShift":
                     print('editshift path')
                     if 'actionButton' in request.POST:
@@ -138,8 +141,25 @@ def planning(request, year=None, week=None):
                     # duree_pause_time = datetime.strptime(form.cleaned_data['duréepause'], '%H:%M')
                     # duree_pause_timedelta = timedelta(hours=duree_pause_time.hour, minutes=duree_pause_time.minute)
                     team_planning_instance.duréepause = form.cleaned_data['duréepause']#duree_pause_timedelta
+                    team_planning_instance.is_overtime = form.cleaned_data['checkbox_field_heuresup']
                     team_planning_instance.note = form.cleaned_data['note']
                     team_planning_instance.save()
+                elif form.cleaned_data['action'] == "NouvelleAbsence":
+                    print("xxxxxxxxxxxxxxxxxxxxxxx ITS HERE new absence xxxxxxxxxxxxxxxxxxxxxxxx")
+                    team_planning_instance = form.save(commit=False) #create a NewAbsence instance without immediately saving it to the database.
+                    # Manually set the fields that are outside the Meta class
+                    team_planning_instance.date = form.cleaned_data['date']
+                    team_planning_instance.Heurededébut = form.cleaned_data['Heurededébut']
+                    team_planning_instance.heuredefin = form.cleaned_data['heuredefin']
+                    team_planning_instance.duréepause = form.cleaned_data['duréepause']#duree_pause_timedelta
+                    team_planning_instance.is_absence = True
+                    team_planning_instance.TypeAbsence = form.cleaned_data['TypeAbsence']
+                    team_planning_instance.note = form.cleaned_data['note']
+                    boolDeleteOtherShifts = form.cleaned_data['checkbox_field']
+                    dateFinAbsence = form.cleaned_data['second_date']
+                    ProcessNewAbsence(team_planning_instance, dateFinAbsence, boolDeleteOtherShifts)
+                    team_planning_instance.save()
+                    team_planning_instance.delete() #on supprime pour pas avoir double copie du premier jour
                 return redirect('planning')  # Redirect to the desired page
             else:
                 print("form is not valid : ")
@@ -230,6 +250,41 @@ def delete_employe(request):
 def admin_approval(request):
     context = {}
     return render(request, 'base/admin.html', context)
+
+def ProcessNewAbsence(team_planning_instance, dateFinAbsence, boolDeleteOtherShifts):#emp : Employe.id, dateDebut, dateFin, heuredebut, heurefin, pause, typeAbsence, supressionAutreShifts, Note):
+    # Ensure the date range is valid
+    if dateFinAbsence and dateFinAbsence >= team_planning_instance.date:
+        current_date = team_planning_instance.date
+        end_date = dateFinAbsence
+
+        # Iterate through each date in the range
+        while current_date <= end_date:
+            # If required, delete other shifts on the same day
+            if boolDeleteOtherShifts:
+                TeamPlanning.objects.filter(
+                    Employe=team_planning_instance.Employe,
+                    date=current_date
+                ).delete()
+
+            # Create a new instance for the current date
+            new_instance = TeamPlanning.objects.create(
+                Employe=team_planning_instance.Employe,
+                date=current_date,
+                Heurededébut=team_planning_instance.Heurededébut,
+                heuredefin=team_planning_instance.heuredefin,
+                duréepause=team_planning_instance.duréepause,
+                Poste=team_planning_instance.Poste,
+                note=team_planning_instance.note,
+                is_absence=True,  # Mark as absence
+                TypeAbsence=team_planning_instance.TypeAbsence
+            )
+
+            # Increment the date
+            current_date += timedelta(days=1)
+
+        print(f"Absence instances created from {team_planning_instance.date} to {dateFinAbsence}")
+    else:
+        print("Invalid date range: End date must be after or equal to start date.")
 
 def ProcessMultipleShifts(EmpidList, WeekList, DayListPreProcessed, CurrentWeekShifts, action):
     id_list = [int(id_str) for id_str in EmpidList.split(',')]

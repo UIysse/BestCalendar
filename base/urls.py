@@ -6,6 +6,7 @@ urlpatterns = [
     path('contact/', views.contact, name='contact'),
     path('success/', views.success, name='success'),
     path('team-members/', views.team_members_page, name='team_members_page'),
+    path('badgeuse/', views.badgeuse, name='badgeuse'),
     path('create_employe/', views.create_employe, name='create_employe'),
     path('modify_employe/<int:employe_id>/', views.modify_employe, name='modify_employe'),
     path('planning/', views.planning, name='planning'),  # Without parameters
