@@ -1,11 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
 import json
 from django.http import JsonResponse, HttpResponse
-from .models import Employe, TeamPlanning, Week
+from datetime import date, datetime, timedelta
+from django.utils.timezone import now
+from .models import Employe, TeamPlanning, Week, UsersBadgedShifts
 from .forms import EmployeForm, ModifyEmployeform, ModifyPlanningForm, ContactForm, SelectionForm
-from datetime import datetime, timedelta
+
 # Create your views here.
 from django.http import HttpResponse
 
@@ -27,6 +29,83 @@ def contact(request):
 
 def badgeuse(request):
     return render(request, 'base/badgeuse.html')
+#le code qui suit gère les infos pour les tooltip sur la page planning (envoyé au client par ce code et AJAX)
+# def get_badge_hours(request, employe_id, date):
+#     print(f"Requête API reçue : employe_id={employe_id}, date={date}")  # Debug
+#     try:
+#         shift = UsersBadgedShifts.objects.get(Employe_id=employe_id, date=date)
+#         data = {
+#             'status': 'success',
+#             'heures_arrivees': shift.heures_arrivees,
+#             'heures_departs': shift.heures_departs
+#         }
+#         print("Données envoyées :", data)  # Debug
+#         return JsonResponse(data)
+#     except UsersBadgedShifts.DoesNotExist:
+#         return JsonResponse({'status': 'error', 'message': 'Aucun badge trouvé'}, status=404)
+    
+#Le code qui suit gère le badging des employés
+@csrf_exempt  # Ajoute la protection CSRF plus tard pour plus de sécurité
+def badge_log(request):
+    if request.method == 'POST':
+        if request.user.user_type != 'badgeuse':
+            return JsonResponse({'status': 'error', 'message': 'Seules les badgeuses peuvent envoyer un badge'})
+
+        pin = request.POST.get('pin')
+        entreprise_user = request.user.entreprise
+        current_time = now().time()
+        current_date = now().date()
+        arrivee_ou_depart = ""
+        try:
+            employe = Employe.objects.get(employee_CodePin=pin, EntrepriseRattachée=entreprise_user)
+
+            # Vérifier si un UsersBadgedShifts existe déjà pour l'employé et la date du jour
+            shift, created = UsersBadgedShifts.objects.get_or_create(
+                Employe=employe,
+                date=current_date,
+                defaults={'heures_arrivees': [], 'heures_departs': []}
+            )
+
+            if created:
+                # Si le shift vient d'être créé, c'est probablement une arrivée
+                shift.heures_arrivees.append(current_time.strftime('%H:%M:%S'))
+                arrivee_ou_depart = "Arrivée enregistrée : " + current_time.strftime('%H:%M:%S')
+            else:
+                # Si le shift existe déjà, on détermine si c'est une arrivée ou un départ
+                if len(shift.heures_arrivees) > len(shift.heures_departs):
+                    # Si on a plus d'arrivées que de départs, c'est un départ
+                    shift.heures_departs.append(current_time.strftime('%H:%M:%S'))
+                    arrivee_ou_depart = "Départ enregistré : " + current_time.strftime('%H:%M:%S')
+                else:
+                    # Sinon, c'est une arrivée
+                    shift.heures_arrivees.append(current_time.strftime('%H:%M:%S'))
+                    arrivee_ou_depart = "Arrivée enregistrée : " + current_time.strftime('%H:%M:%S')
+
+            shift.save()
+            # 🔥 Vérifier si un shift est prévu pour cet employé aujourd'hui
+            team_planning = TeamPlanning.objects.filter(Employe=employe, date=current_date).first()
+
+            if team_planning:
+                # 🔥 Associer le badge shift au TeamPlanning existant
+                team_planning.users_badged_shift = shift
+                team_planning.save()
+            else:
+                # 🔥 Si aucun planning n'existe, en créer un automatiquement et lui faire avoir une apparence particulière par la suite
+                TeamPlanning.objects.create(
+                    Employe=employe,
+                    date=current_date,
+                    Heurededébut=current_time,
+                    heuredefin=(datetime.combine(current_date, current_time) + timedelta(hours=8)).time(),  # Estimation fin
+                    duréepause="00:30",  # Valeur par défaut
+                    Poste=employe.Poste,  # Par défaut
+                    users_badged_shift=shift
+                )
+            return JsonResponse({'status': 'success', 'message': f'{arrivee_ou_depart} pour {employe.firstname} {employe.name}'})
+
+        except Employe.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Code PIN incorrect ou employé non trouvé dans votre entreprise'})
+
+    return JsonResponse({'status': 'error', 'message': 'Requête invalide'}, status=400)
 
 def success(request):
    return render(request, 'base/success.html')
@@ -56,6 +135,9 @@ def team_members_page(request):
     return render(request, 'base/team_members_page.html', context)
 
 def planning(request, year=None, week=None):
+    # Générer les semaines pour 2025 et 2026
+    #generate_weeks_for_year(2025)
+    #generate_weeks_for_year(2026)
     # Ensure the user is authenticated
     if request.user.is_authenticated:
         # Access the 'entreprise' attribute of the user
@@ -160,7 +242,9 @@ def planning(request, year=None, week=None):
                     ProcessNewAbsence(team_planning_instance, dateFinAbsence, boolDeleteOtherShifts)
                     team_planning_instance.save()
                     team_planning_instance.delete() #on supprime pour pas avoir double copie du premier jour
-                return redirect('planning')  # Redirect to the desired page
+                modification_date = form.cleaned_data['date']
+                return redirect('planning_with_params', year=modification_date.year, week=modification_date.isocalendar()[1])
+                #return redirect('planning')  # Redirect to the desired page
             else:
                 print("form is not valid : ")
                 print(form.errors)
@@ -172,13 +256,13 @@ def planning(request, year=None, week=None):
                 print("xxxxxxxxxxxxxxxxxxxxxxx ITS HERE COPYMULTIPLE xxxxxxxxxxxxxxxxxxxxxxxx")
                 print(selectionform)
                 ProcessMultipleShifts(selectionform.cleaned_data['employees'],
-                                          selectionform.cleaned_data['weeks'], selectionform.cleaned_data['days'], week, action)
+                                          selectionform.cleaned_data['weeks'], selectionform.cleaned_data['days'], week, action, selectionform.cleaned_data['year_to_copy_from'])
             elif action == 'ValidateDeleteMultipleShifts':
                 selectionform = SelectionForm(request.POST)
                 print("xxxxxxxxxxxxxxxxxxxxxxx ITS HERE DELETEMULTIPLE xxxxxxxxxxxxxxxxxxxxxxxx")
                 print(selectionform)
                 ProcessMultipleShifts(selectionform.cleaned_data['employees'],
-                                          selectionform.cleaned_data['weeks'], selectionform.cleaned_data['days'], week, action)
+                                          selectionform.cleaned_data['weeks'], selectionform.cleaned_data['days'], week, action, selectionform.cleaned_data['year_to_copy_from'])
             return redirect('planning')  # Redirect to the desired page
     else: #following else code gets executed when user clicks on "Planning" on their browser
         form = ModifyPlanningForm(instance=teamPlanning)  # Pass employe_id here
@@ -196,7 +280,13 @@ def planning(request, year=None, week=None):
         shifts_by_emp_and_day[emp.id] = shifts_by_day
     # if len(shifts_by_day) > 0:
     #     print(shifts_by_day)
-    weeks = Week.objects.all()
+    #weeks = Week.objects.all() on va travailler uniquement sur les semaines de l'année en cours 
+    # Calculate the date 3 days after start_date
+    date_after_three_days = start_date + timedelta(days=3)
+    # Extract the year of that date
+    year_of_interest = date_after_three_days.year
+    # Filter weeks based on the calculated year
+    weeks = Week.objects.filter(year=year_of_interest)
     context = {
         'days': days,
         'tasks': tasks,
@@ -286,7 +376,7 @@ def ProcessNewAbsence(team_planning_instance, dateFinAbsence, boolDeleteOtherShi
     else:
         print("Invalid date range: End date must be after or equal to start date.")
 
-def ProcessMultipleShifts(EmpidList, WeekList, DayListPreProcessed, CurrentWeekShifts, action):
+def ProcessMultipleShifts(EmpidList, WeekList, DayListPreProcessed, CurrentWeekShifts, action, year_to_copy_from):#problème d'année non prise en compte (et copier des shift de semaine 51,52 2024 à 1,2 2025 poserait probleme si mal implanté
     id_list = [int(id_str) for id_str in EmpidList.split(',')]
     weeks_list = [int(id_str) for id_str in WeekList.split(',')]
     DayList = DayListPreProcessed.split(',')
@@ -294,15 +384,15 @@ def ProcessMultipleShifts(EmpidList, WeekList, DayListPreProcessed, CurrentWeekS
         for week in weeks_list:
             for day in DayList:
                 if action == 'ValidateCopyMultipleShifts':
-                    CopyOneEmployeOneShiftOneWeek(emp, week, day, CurrentWeekShifts) #add current week in here so we know what to copy
+                    CopyOneEmployeOneShiftOneWeek(emp, week, day, CurrentWeekShifts, year_to_copy_from) #add current week in here so we know what to copy
                 elif action == 'ValidateDeleteMultipleShifts':
-                    DeleteOneEmployeOneShiftOneWeek(emp, week, day, CurrentWeekShifts)
+                    DeleteOneEmployeOneShiftOneWeek(emp, week, day, CurrentWeekShifts, year_to_copy_from)
     pass
 
-def CopyOneEmployeOneShiftOneWeek(emp : Employe.id, week : Week, DaysToCopy, CurrentWeek):
+def CopyOneEmployeOneShiftOneWeek(emp : Employe.id, week : Week, DaysToCopy, CurrentWeek, year_to_copy_from): # problème de gestion des années supprimer ce commentaire lorsque résolu
     employe = get_object_or_404(Employe, pk=emp)
-    weekToCopyTo = get_object_or_404(Week, week_number=week)
-    weekToCopyFrom = get_object_or_404(Week, week_number=CurrentWeek)
+    weekToCopyTo = get_object_or_404(Week, week_number=week, year = year_to_copy_from)
+    weekToCopyFrom = get_object_or_404(Week, week_number=CurrentWeek, year = year_to_copy_from)
     days = weekToCopyFrom.get_week_days()
     DaysToCopyTo = weekToCopyTo.get_week_days()
     shifts_by_day = {}
@@ -340,10 +430,46 @@ def CopyOneEmployeOneShiftOneWeek(emp : Employe.id, week : Week, DaysToCopy, Cur
                     ) #fill stuff here
             team_planning_instance.save()
 
-def DeleteOneEmployeOneShiftOneWeek(emp : Employe.id, week : Week, DaysToDelete, CurrentWeek):
+def generate_weeks_for_year(year):
+    """
+    Génère toutes les semaines pour une année donnée en respectant la norme ISO 8601.
+    """
+
+    # Boucle pour les semaines 1 à 53
+    for week_number in range(1, 54):  # Maximum 53 semaines
+        try:
+            # Trouver le premier jour de cette semaine ISO
+            first_jeudi_of_week = date.fromisocalendar(year, week_number, 4)  # Lundi de la semaine
+            first_day_of_week = first_jeudi_of_week - timedelta(days=3)  # Lundi de la semaine 1
+
+        except ValueError:
+            break  # Stopper si la semaine n'existe pas (ex: semaine 53 inexistante)
+
+        # Créer ou mettre à jour la semaine dans la base de données
+        try:
+            o = Week.objects.filter(week_number=1, year=2025)
+            print(o)
+            week, created = Week.objects.get_or_create(
+                week_number=week_number,
+                year=year,
+                defaults={'first_day': first_day_of_week}
+            )
+            if created:
+                print(f"✅ Week {week_number} ({year}) created successfully: {first_day_of_week}")
+            else:
+                print(f"⚠️ Week {week_number} ({year}) already exists with first_day: {week.first_day}")
+
+        except Exception as e:
+            print(f"❌ ERROR: Failed to create Week {week_number} ({year}).")
+            print(f"   → first_day: {first_day_of_week}")
+            print(f"   → Exception: {e}")
+
+
+
+def DeleteOneEmployeOneShiftOneWeek(emp : Employe.id, week : Week, DaysToDelete, CurrentWeek, year_to_copy_from):
     employe = get_object_or_404(Employe, pk=emp)
-    weekToDeleteTo = get_object_or_404(Week, week_number=week)
-    weekToCopyFrom = get_object_or_404(Week, week_number=CurrentWeek)
+    weekToDeleteTo = get_object_or_404(Week, week_number=week, year = year_to_copy_from)
+    weekToCopyFrom = get_object_or_404(Week, week_number=CurrentWeek, year = year_to_copy_from)
     days = weekToCopyFrom.get_week_days()
     DaysToDeleteTo = weekToDeleteTo.get_week_days()
     shifts_by_day = {}

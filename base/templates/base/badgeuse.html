@@ -1,6 +1,85 @@
 {% extends 'main.html' %}
 {% load form_tags %}
+{% load static %}
 {% block content %}
-<h1>Vous devez être authentifié en tant que badgeuse de votre entreprise pour accèder à cette page.</h1>
+{% if user.is_authenticated %}
+{% if user.is_badgeuse %}
 
+
+    <div class="text-center">
+        <h1 class="mb-4">Badgeuse</h1>
+        <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#badgeModal">
+            Badger
+        </button>
+
+        <div id="message" class="mt-3 text-success fw-bold" style="display: none;"></div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="badgeModal" tabindex="-1" aria-labelledby="badgeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="badgeModalLabel">Entrez votre code PIN</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="pin" class="form-control text-center fs-4" placeholder="****" maxlength="4" autocomplete="off" inputmode="numeric" style="-webkit-text-security: disc;">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-success"  id="validatePin">Valider</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const badgeButton = document.querySelector('[data-bs-target="#badgeModal"]');
+            badgeButton.addEventListener('click', function() {
+                document.getElementById('pin').value = '';  // Vide le champ PIN
+            });
+
+            document.getElementById('validatePin').addEventListener('click', function () {
+                const pin = document.getElementById('pin').value;
+
+                fetch("{% url 'badge_log' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": "{{ csrf_token }}"  // Ajoute le token CSRF pour la sécurité
+                    },
+                    body: new URLSearchParams({
+                        "pin": pin
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('message').textContent = data.message;
+                        document.getElementById('message').style.display = 'block';
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('badgeModal'));
+                        modal.hide();
+                    } else {
+                        document.getElementById('message').textContent = data.message;
+                        document.getElementById('message').style.display = 'block';
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('badgeModal'));
+                        modal.hide();
+                    }
+                })
+                .catch(error => console.error('Erreur:', error));
+            });
+        });
+    </script>
+
+{% else %}
+<h1>Vous devez être authentifié en tant que badgeuse de votre entreprise pour accèder à cette page.</h1>
+{% endif %}
+{% else %}
+<h1>Veuillez vous connecter pour accéder à cette page web</h1>
+
+<a href="{% url 'login' %}">Se connecter</a>
+
+{% endif %}
 {% endblock %}

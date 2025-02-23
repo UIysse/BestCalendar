@@ -90,3 +90,4 @@ class SelectionForm(forms.Form):
     employees = forms.CharField(widget=forms.HiddenInput(), required=False)
     weeks = forms.CharField(widget=forms.HiddenInput(), required=False)
     days = forms.CharField(widget=forms.HiddenInput(), required=False)
+    year_to_copy_from = forms.CharField(widget=forms.HiddenInput(), required=False)

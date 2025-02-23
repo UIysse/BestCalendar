@@ -10,3 +10,4 @@ class MyPermissionsModel(models.Model):
         permissions = (
             ("custom_permission", "Team Planning owner"),
         )
+

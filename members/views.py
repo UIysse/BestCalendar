@@ -34,8 +34,11 @@ def register_user(request):
 			password = form.cleaned_data['password1']
 			user = authenticate(username=username, password=password)
 			login(request, user)
-			messages.success(request, ("Inscription réussite !"))
+			messages.success(request, 'Votre compte a été créé avec succès !')
 			return redirect('home')
+		else:
+			print(form.errors)  # Debug: Affichez les erreurs dans la console
+			messages.error(request, 'Veuillez corriger les erreurs ci-dessous.')
 	else:
 		form = RegisterUserForm()
 

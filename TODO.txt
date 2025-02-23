@@ -1,2 +1,10 @@
 run weeks on at least 2 years (populate fn)
-absences
+faire en sorte que les semaines soient prise en compte selon l'année
+finir les tooltips
+mettre le site en https
+passer en progrestsql
+faire apparaitre differemnt les shifts créés par badgage
+fixer deletemultipleweeks
+faire fonctionner le bouton annuler de copymultiple et deletemultiple
+publication du planning et avertissement des salariés de leur emploi du temps
+rendre le tableau des shifts plus joli et user friendly

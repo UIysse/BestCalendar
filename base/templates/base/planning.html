@@ -1,11 +1,12 @@
 {% extends 'main.html' %}
 {% load form_tags %}
 {% load static %}
+{% load custom_filters %}
 {% block content %}
 {% if user.is_authenticated %}
 {% if perms.members.custom_permission %}
 <div style="display: flex; justify-content: space-between; align-items: center;">
-    {{ start_date|date:'Y' }}, Semaine {{ start_date|date:'W' }}
+    {{ start_date|add_days:3|date:'Y' }}, Semaine {{ start_date|date:'W' }}
     <div>
         <a class="bi bi-arrow-left-circle" style="font-size: 1.2em;" href="{% url 'planning_with_params' year=prev_year week=prev_week %}"></a>
         <input type="date" id="datePicker" name="date" value="{{ start_date|date:'Y-m-d' }}">
@@ -40,7 +41,8 @@
                                                     {% if day == key1 %} <!-- test sur day match-->
                                                         {% for nitem in value1 %}
                                                             <tr style="background-color: {% if nitem.is_overtime %}red{% elif nitem.is_absence%}lightgray{% else %}{{ nitem.Poste.couleur }}{% endif %};"><!-- si heure sup couleur rouge autrement couleur du poste-->
-                                                                <td onclick="openInnerModal(event, this)"
+                                                                <td class="shift-cell"
+                                                                    onclick="openInnerModal(event, this)"
                                                                     data-date = "{{ day|date:'Y-m-d' }}"
                                                                     data-Heurededébut="{{ nitem.Heurededébut }}"
                                                                     data-heuredefin="{{ nitem.heuredefin }}"
@@ -51,7 +53,23 @@
                                                                     data-EmployeName = "{{ emp.name }}"
                                                                     data-EmployeFirstName = "{{ emp.firstname }}"
                                                                     data-EmployeId = "{{ emp.id }}"
-                                                                    data-shiftId = "{{ nitem.id }}">
+                                                                    data-shiftId = "{{ nitem.id }}"
+                                                                    data-bs-toggle="tooltip"
+                                                                    data-bs-html="true"
+                                                                    data-bs-placement="top"
+                                                                    title=" 
+                                                                        {% if nitem.note%} 
+                                                                        Note : {{ nitem.note }}<br>
+                                                                        {%endif%}
+                                                                        {% if nitem.users_badged_shift %}
+                                                                            📌 <b>Badges :</b> <br>
+                                                                            {% for arrivee, depart in nitem.users_badged_shift.heures_arrivees|zip_lists:nitem.users_badged_shift.heures_departs %}
+                                                                                🔹 {{ arrivee }} - {{ depart|default:'❓' }} <br>
+                                                                            {% endfor %}
+                                                                        {% else %}
+                                                                            ❌ Aucun badge enregistré
+                                                                        {% endif %}
+                                                                    ">
                                                                     {{nitem.Heurededébut}} - {{nitem.heuredefin}}
                                                                     {% if nitem.note %}
                                                                         <i class="bi bi-file-text"></i>
@@ -354,7 +372,7 @@
                     <!-- Bouton Valider -->
                     <div class="modal-footer justify-content-end">
                         <button type="submit" name="actionButton" value="delete" class="btn btn-danger">Supprimer</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal ">Annuler</button>
                         <button type="submit" name="actionButton" value="edit" class="btn btn-primary">Valider</button>
                     </div>
                 </form>
@@ -416,10 +434,6 @@
                     <label class="btn btn-outline-primary" for="btn-check-Samedi">Sa</label>
                     <input type="checkbox" class="btn-check" id="btn-check-Dimanche" autocomplete="off">
                     <label class="btn btn-outline-primary" for="btn-check-Dimanche">Di</label>
-                </div>
-                <!-- Hidden shiftId field -->
-                <div class="form-group row" style="display:none;">
-                    <input type="hidden" name="{{ selectionform.CopyMultipleShifts.name }}" id="CopyMultipleShiftsId">
                 </div>
                 {{ selectionform }}
                 <!-- Bouton Valider -->
@@ -723,6 +737,7 @@ document.getElementById('modalSubmitBtn').addEventListener('click', function() {
     modalCopy.querySelector('input[name="employees"]').value = selectedEmployeeIds.join(',');
     modalCopy.querySelector('input[name="weeks"]').value = selectedWeekIds.join(',');
     modalCopy.querySelector('input[name="days"]').value = activeDays.join(',');
+    modalCopy.querySelector('input[name="year_to_copy_from"]').value = "{{ start_date|date:'Y' }}";
 });
 //manage the submit of deleteshiftmodal
 document.getElementById('modalDeleteShiftsSubmitBtn').addEventListener('click', function() {
@@ -764,6 +779,7 @@ document.getElementById('modalDeleteShiftsSubmitBtn').addEventListener('click', 
     modalDelete.querySelector('input[name="employees"]').value = selectedEmployeeIds.join(',');
     modalDelete.querySelector('input[name="weeks"]').value = selectedWeekIds.join(',');
     modalDelete.querySelector('input[name="days"]').value = activeDays.join(',');
+    modalDelete.querySelector('input[name="year_to_copy_from"]').value = "{{ start_date|date:'Y' }}";
 });
 </script>
 <script> // code qui gere le contenu modal displayed à partir d'un click de pagination
@@ -792,6 +808,52 @@ document.getElementById('modalDeleteShiftsSubmitBtn').addEventListener('click', 
         });
     });
 </script>
+<!-- Le script qui gère l'affichage du tooltip suit cette ligne -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+<!--<script>
+    document.querySelectorAll('.shift-cell').forEach(cell => {
+        cell.addEventListener('mouseenter', function () {
+            let employeId = this.getAttribute('data-employeId');
+            let date = this.getAttribute('data-date');
+
+            fetch(`/api/get-badge-hours/${employeId}/${date}/`)
+                .then(response => response.json())
+                .then(data => {
+                    let tooltipText = (data.status === 'success')
+                        ? `Arrivées: ${data.heures_arrivees.join(", ")} | Départs: ${data.heures_departs.join(", ")}`
+                        : "Aucun badge trouvé";
+
+                    this.setAttribute('data-bs-original-title', tooltipText); // Met à jour le texte de la tooltip
+                    
+                    let tooltipInstance = bootstrap.Tooltip.getInstance(this); // Vérifie si la tooltip existe
+                    if (tooltipInstance) {
+                        tooltipInstance.dispose(); // Supprime la tooltip existante
+                    }
+                    
+                    bootstrap.Tooltip.getOrCreateInstance(this); // Crée ou met à jour la tooltip
+                })
+                .catch(error => {
+                    console.error('Erreur AJAX:', error);
+                    this.setAttribute('data-bs-original-title', "Erreur de chargement");
+
+                    let tooltipInstance = bootstrap.Tooltip.getInstance(this);
+                    if (tooltipInstance) {
+                        tooltipInstance.dispose();
+                    }
+
+                    bootstrap.Tooltip.getOrCreateInstance(this);
+                });
+        });
+    });
+
+</script>-->
 {% else %}
   <!-- Content to be displayed if the user does not have the permission -->
   <p>The user does not have the permission.</p>

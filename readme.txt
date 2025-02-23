@@ -1,3 +1,6 @@
+1) activer user glenn sudo su - glenn
+2) activer l'environnement env
+
 Set-ExecutionPolicy Unrestricted -Scope Process
 .\env\Scripts\activate
 python manage.py runserver
@@ -95,3 +98,98 @@ bash
 Copier le code
 sudo nginx -t
 sudo systemctl restart nginx
+
+
+MISE A JOUR DES WEEK PREEXISTANTE POUR QU ELLES AIENT LE CHAMPS ANNEE
+Maintenant que nous avons ajouté l'année, il faut mettre à jour les enregistrements existants.
+
+Exécute ce script Python dans Django Shell :
+
+bash
+Copier
+Modifier
+python manage.py shell
+Puis, tape ce script :
+
+python
+Copier
+Modifier
+from base.models import Week  # Importe ton modèle
+
+# Met à jour toutes les semaines existantes
+for week in Week.objects.all():
+    week.year = week.first_day.year  # Assigne l'année depuis first_day
+    week.save()
+
+print("Mise à jour terminée !")
+
+
+
+----------------------AJOUT DES SEMAINES POUR LES ANNEES 2025 ET 2025 attention il faut respecter la norme 8601 (la premiere semaine de l'année X est la premeire semaine qui contient un jeudi)
+Exécute ce script dans Django Shell (python manage.py shell):
+from datetime import date, timedelta
+from base.models import Week
+
+def generate_weeks_for_year(year):
+    """
+    Génère toutes les semaines pour une année donnée en respectant la norme ISO 8601.
+    """
+
+    # Trouver le premier jour de la première semaine ISO de l'année
+    first_day = date.fromisocalendar(year, 1, 1)  # Lundi de la semaine 1
+
+    for week_number in range(1, 54):  # Maximum 53 semaines possibles
+        week_start = first_day + timedelta(weeks=week_number - 1)
+
+        # Vérifier si la semaine appartient bien à l'année demandée
+        if week_start.year < year:
+            continue  # Évite d'ajouter une semaine qui appartient à l'année précédente
+
+        if week_number == 53:
+            # Vérifier si la semaine déborde sur l'année suivante
+            jours_suivants = sum(1 for i in range(7) if (week_start + timedelta(days=i)).year == year + 1)
+
+            if jours_suivants >= 4:
+                print(f"⚠️ Semaine {week_number} appartient majoritairement à {year + 1}, non créée pour {year}.")
+                continue  # Ne pas créer la semaine 53 si elle appartient majoritairement à l'année suivante
+
+        # Création de la semaine
+        week, created = Week.objects.get_or_create(
+            week_number=week_number,
+            year=year,
+            defaults={'first_day': week_start}
+        )
+
+        if created:
+            print(f"✅ Semaine {week_number} créée : {week_start}")
+        else:
+            print(f"⚠️ Semaine {week_number} existante, non modifiée.")
+
+# Générer les semaines pour 2025 et 2026
+generate_weeks_for_year(2025)
+generate_weeks_for_year(2026)
+
+
+
+---------------SUPPRIMER LES SEMAINES ANNEE X 
+from base.models import Week
+
+# Supprimer les semaines de 2025 uniquement
+Week.objects.filter(year=2025).delete()
+
+print("Les semaines de 2025 ont été supprimées.")
+
+----------------IMPRIMER LES SEMAINE ANNEE X
+from base.models import Week
+
+# Vérifier combien de semaines existent pour 2025
+weeks_2025 = Week.objects.filter(year=2025)
+
+# Afficher les semaines trouvées
+if weeks_2025.exists():
+    print(f"✅ {weeks_2025.count()} semaines trouvées pour 2025.")
+    for week in weeks_2025:
+        print(f"Semaine {week.week_number} - {week.first_day}")
+else:
+    print("❌ Aucune semaine trouvée pour 2025.")
+
