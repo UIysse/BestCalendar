@@ -1,10 +1,18 @@
 run weeks on at least 2 years (populate fn)
-faire en sorte que les semaines soient prise en compte selon l'année
-finir les tooltips
-mettre le site en https
+faire en sorte que les semaines soient prise en compte selon l'année !
+finir les tooltips !
+mettre le site en https !
 passer en progrestsql
-faire apparaitre differemnt les shifts créés par badgage
-fixer deletemultipleweeks
+faire apparaitre differemnt les shifts créés par badgage !
+fixer deletemultipleweeks !
 faire fonctionner le bouton annuler de copymultiple et deletemultiple
 publication du planning et avertissement des salariés de leur emploi du temps
 rendre le tableau des shifts plus joli et user friendly
+améliorer l'impression des shifts
+ajouter activation par mail et anti robot creation compte
+code pin des employés visibles par le gérant !
+faire apparaitre durée de la pause et de travail dans la cell !
+empecher employeur denvoyer salarié dans autre entreprise !
+finaliser le register et empeche de register quand deja connecter, aussi verification mail
+faire la page mon profile
+rendre le site user friendly sur smartphone et tablette

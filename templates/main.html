@@ -18,14 +18,127 @@
     border-radius: 50%; /* Circular overlay for icons */
     padding: 5px; /* Padding around the icon */
 }
-.my-table td {
-    width: 100px; /* Sets a fixed width for each cell */
-    height: 60px; /* Optional: Sets a fixed height for each cell */
-    overflow: hidden; /* Ensures content doesn't overflow the cell size */
-    text-overflow: ellipsis; /* Adds an ellipsis if the text overflows */
-    white-space: nowrap;  /*Prevents text from wrapping to new lines */
-    font-size: 12px;
+/* ✅ Empêcher toute expansion due au padding */
+.my-table td, .my-table td .shift-cell{
+    padding: 0;
+    margin: 0;
+    margin-bottom: 5px;
 }
+.unscheduled-shift {
+    position: relative; /* Nécessaire pour que le ::before fonctionne */
+}
+
+.unscheduled-shift::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.6); /* Ajuste ici la transparence */
+    z-index: 1;
+}
+
+/* Style général des cellules */
+.my-table td {
+    width: 100px;
+    max-height: 50px; /* Empêche l'agrandissement */
+    height: 50px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    cursor: pointer; /* Curseur main */
+    position: relative; /* Important pour le pseudo-élément */
+    transition: all 0.2s ease-in-out;
+}
+.my-table td table {
+    width: 100%;
+    height: 100%;
+    table-layout: fixed;
+}
+.my-table td table tr {
+    max-height: 40px; /* Empêche l'agrandissement */
+    height: 40px;
+}
+/* Appliquer la même contrainte aux sous-cellules .shift-cell */
+.my-table td .shift-cell {
+    max-height: 40px; /* Empêche l'agrandissement */
+    height: 40px;
+    padding: 1;
+    margin: 1;
+    align-items: center; /* ✅ Centre verticalement */
+    justify-content: flex-start; /* ✅ Aligner à gauche */
+    padding-left: 8px; /* ✅ Décalage léger du texte */
+    text-align: left; /* ✅ Alignement du texte à gauche */
+    overflow: hidden;
+    flex-wrap: wrap; /* Pour éviter un contenu trop large */
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-grow: 1; /* Assure un bon remplissage sans dépasser */
+}
+
+/* Effet sur la TD principale (uniquement dans l'espace autour du contenu interne) */
+.my-table td:hover::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    right: 3px;
+    bottom: 3px;
+    border: 2px dashed #007bff; /* Bordure pointillée pour signaler l'édition */
+    border-radius: 5px;
+    pointer-events: none;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Désactive l'effet de la TD principale quand la souris est sur une TD interne */
+.my-table td:hover .shift-cell {
+    background-color: transparent;
+    border: none;
+}
+
+/* Effet sur les sous-cellules (pour qu'elles ne perturbent pas l'effet principal) */
+.shift-cell:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    transition: all 0.2s ease-in-out;
+}
+/* Icône "+" masquée par défaut */
+.plus-icon {
+    font-size: 24px;
+    color: rgba(0, 0, 0, 0.5); /* Couleur semi-transparente */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Afficher l'icône uniquement lorsque la souris est sur la cellule, mais pas sur `.shift-cell` */
+.my-table td:hover:not(:has(.shift-cell:hover)) .plus-icon {
+    opacity: 1;
+}
+.value-right {
+    float: right;
+    padding-right: 5px;
+}
+.positive-diff {
+    background-color: green;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.negative-diff {
+    background-color: red;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 5px;
+    display: inline-block;
+}
+
 .my-table th {
     font-size: 16px;
 }

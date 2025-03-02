@@ -22,10 +22,17 @@ class EmployeForm(forms.ModelForm):
             self.fields['EntrepriseRattachée'].queryset = Entreprise.objects.filter(id=user.entreprise.id)
 
 
-class ModifyEmployeform(forms.ModelForm):
+class ModifyEmployeForm(forms.ModelForm):
     class Meta:
         model = Employe
-        fields = ['name', 'firstname', 'Poste','phone_number', 'e_mail', 'EntrepriseRattachée']
+        fields = ['name', 'firstname', 'Poste', 'phone_number', 'e_mail']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom'}),
+            'firstname': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Prénom'}),
+            'Poste': forms.Select(attrs={'class': 'form-select'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Téléphone'}),
+            'e_mail': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
+        }
 
 class ModifyPlanningForm(forms.ModelForm):
     #employe fill par cellule

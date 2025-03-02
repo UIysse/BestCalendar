@@ -34,6 +34,7 @@
                 {% for day in days %}
                     <!-- Shift code here -->
                                 <td onclick="openModal(this, '{{ emp.id }}', '{{ emp.name }}', '{{ emp.firstname }}', '{{ emp.Poste.id }}', '{{ day|date:'Y-m-d' }}')">
+                                    <i class="bi bi-plus-circle-fill plus-icon"></i>
                                     <table border="1">
                                         {% for key, value in shifts_by_emp_and_day.items %}
                                             {% if emp.id == key %}<!-- test sur employe match-->
@@ -41,7 +42,7 @@
                                                     {% if day == key1 %} <!-- test sur day match-->
                                                         {% for nitem in value1 %}
                                                             <tr style="background-color: {% if nitem.is_overtime %}red{% elif nitem.is_absence%}lightgray{% else %}{{ nitem.Poste.couleur }}{% endif %};"><!-- si heure sup couleur rouge autrement couleur du poste-->
-                                                                <td class="shift-cell"
+                                                                <td class="shift-cell {% if nitem.is_unscheduled %}unscheduled-shift{% endif %}"
                                                                     onclick="openInnerModal(event, this)"
                                                                     data-date = "{{ day|date:'Y-m-d' }}"
                                                                     data-Heurededébut="{{ nitem.Heurededébut }}"
@@ -58,7 +59,10 @@
                                                                     data-bs-html="true"
                                                                     data-bs-placement="top"
                                                                     title=" 
-                                                                        {% if nitem.note%} 
+                                                                        {% if nitem.is_unscheduled %} 
+                                                                        ⚠️ Shift non prévu<br>
+                                                                        {%endif%}
+                                                                        {% if nitem.note %} 
                                                                         Note : {{ nitem.note }}<br>
                                                                         {%endif%}
                                                                         {% if nitem.users_badged_shift %}
@@ -70,7 +74,7 @@
                                                                             ❌ Aucun badge enregistré
                                                                         {% endif %}
                                                                     ">
-                                                                    {{nitem.Heurededébut}} - {{nitem.heuredefin}}
+                                                                    {{nitem.Heurededébut}} - {{nitem.heuredefin}}      ({{ nitem.duree_pause_minutes }} min) <span class="value-right {% if nitem.users_badged_shift and nitem.difference_travail_reel_theorique|first == '-' %} negative-diff {% elif nitem.users_badged_shift %} positive-diff {% endif %}">{% if nitem.users_badged_shift %}{{nitem.difference_travail_reel_theorique}}{% endif %}</span>
                                                                     {% if nitem.note %}
                                                                         <i class="bi bi-file-text"></i>
                                                                     {% endif %}
@@ -635,6 +639,8 @@
         document.getElementById('NouveauShiftTypeFormId').value = "AddShift";
         //Fill nouvelle absence form
         document.getElementById('NouvelleAbsenceTypeFormId').value = "NouvelleAbsence";
+        modal.querySelector('#id_Employe_absent').value = cell.getAttribute('data-EmployeId');
+        modal.querySelector('#id_Poste_absent').value = cell.getAttribute('data-Poste');
         //make edition page active only
         var paginationItems = document.querySelectorAll('.pagination .page-item');
         

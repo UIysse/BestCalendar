@@ -1,6 +1,18 @@
 1) activer user glenn sudo su - glenn
 2) activer l'environnement env
-
+source /home/glenn/BestCalendar/env/bin/activate
+normalement cest activé.
+3) se positionner dans le bon dossier
+cd /home/glenn/BestCalendar # se met dans le dossierBestcalendar
+4) sauvegarde la database
+mv db.sqlite3 db.sqlite3.backup  # Sauvegarde en cas de problème
+git stash push db.sqlite3 : Cache la base de données avant la mise à jour.
+git pull origin main : Récupère les changements depuis GitHub.
+git stash pop : Remet SQLite en place après la mise à jour.
+5)
+si un probleme chatgpt explique comment connaitre les backup de la database et les reimplémenter.
+si un mdp pour glenn est demandé : 111990
+6) le mail application : pharmashiftcontact@gmail.com pw : Pcsd93200*
 Set-ExecutionPolicy Unrestricted -Scope Process
 .\env\Scripts\activate
 python manage.py runserver
@@ -10,7 +22,8 @@ source env/bin/activate
 deactivate
 pkill gunicorn
 gunicorn --bind 0.0.0.0:8000 BestCalendar.wsgi:application
-
+je suis passé en https avec :
+sudo certbot --nginx -d pharmashift.fr -d www.pharmashift.fr
 a tester : 
 sudo nano /etc/nginx/sites-available/BestCalendar
 server {
@@ -169,7 +182,9 @@ def generate_weeks_for_year(year):
 generate_weeks_for_year(2025)
 generate_weeks_for_year(2026)
 
-
+en python shell :
+from base.views import generate_weeks_for_year
+generate_weeks_for_year(2026)
 
 ---------------SUPPRIMER LES SEMAINES ANNEE X 
 from base.models import Week

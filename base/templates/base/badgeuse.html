@@ -37,8 +37,16 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const badgeButton = document.querySelector('[data-bs-target="#badgeModal"]');
+            const messageDiv = document.getElementById('message');
             badgeButton.addEventListener('click', function() {
                 document.getElementById('pin').value = '';  // Vide le champ PIN
+            });
+            
+            // Quand la modal s'affiche, donner automatiquement le focus à l'input PIN
+            const pinInput = document.getElementById('pin');
+            const badgeModal = document.getElementById('badgeModal');
+            badgeModal.addEventListener('shown.bs.modal', function () {
+                pinInput.focus();
             });
 
             document.getElementById('validatePin').addEventListener('click', function () {
@@ -56,17 +64,17 @@
                 })
                 .then(response => response.json())
                 .then(data => {
+                    messageDiv.textContent = data.message;
+                    messageDiv.style.display = 'block';
+                    // Supprime les anciennes classes et applique la couleur correspondante
+                    messageDiv.classList.remove('text-success', 'text-danger');
                     if (data.status === 'success') {
-                        document.getElementById('message').textContent = data.message;
-                        document.getElementById('message').style.display = 'block';
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('badgeModal'));
-                        modal.hide();
+                        messageDiv.classList.add('text-success');  // Vert pour succès
                     } else {
-                        document.getElementById('message').textContent = data.message;
-                        document.getElementById('message').style.display = 'block';
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('badgeModal'));
-                        modal.hide();
+                        messageDiv.classList.add('text-danger');  // Rouge pour erreur
                     }
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('badgeModal'));
+                    modal.hide();
                 })
                 .catch(error => console.error('Erreur:', error));
             });

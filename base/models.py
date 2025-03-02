@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import User, AbstractUser, Group, Permission
 from django.core.exceptions import ValidationError
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from django.utils.crypto import get_random_string
 from django.utils.translation import gettext_lazy as _
 # Create your models here.
@@ -164,7 +164,7 @@ class UsersBadgedShifts(models.Model):
             else:
                 print(f"Avertissement : Aucun badge pour l'entrée {i+1}")
 
-        return total
+        return str(total)
 
 class TeamPlanning(models.Model):
     mydict={}
@@ -193,8 +193,12 @@ class TeamPlanning(models.Model):
     # New boolean field for overtime
     is_overtime = models.BooleanField(default=False, verbose_name="Shift en heures supplémentaires")
 
-        # New boolean field for leave
+    # New boolean field for leave
     is_absence = models.BooleanField(default=False, verbose_name="Absence")
+
+    # New boolean field for leave
+    is_unscheduled = models.BooleanField(default=False, verbose_name="Shift non prévu")
+
     # 🔥 Ajout d'une relation avec UsersBadgedShifts
     users_badged_shift = models.ForeignKey(
         'UsersBadgedShifts', 
@@ -212,7 +216,69 @@ class TeamPlanning(models.Model):
 
     def __str__(self):
         return self.date.strftime("%Y-%m-%d") + ' ' + self.Employe.firstname + ' ' + self.Employe.name + ' ' + str(self.id)
+    
+    @property
+    def duree_pause_minutes(self):
+        """Retourne la durée de la pause en minutes"""
+        if self.duréepause:
+            # Convertir en datetime pour soustraction
+            pause_datetime = datetime.combine(self.date, self.duréepause)
+            min_time = datetime.combine(self.date, time(0, 0))  # 00:00
+            pause_duration = pause_datetime - min_time
+            return int(pause_duration.total_seconds() // 60)  # Convertir en minutes
+        return 0  # Retourne 0 si la pause n'est pas définie
+    
+    @property
+    def duree_travail_theorique(self):
+        """Retourne la durée de travail théorique au format HH:MM:SS"""
+        if self.Heurededébut and self.heuredefin and self.duréepause:
+            # Convertir les TimeField en datetime pour pouvoir les soustraire
+            debut_datetime = datetime.combine(self.date, self.Heurededébut)
+            fin_datetime = datetime.combine(self.date, self.heuredefin)
+            pause_datetime = datetime.combine(self.date, self.duréepause)
+            min_time = datetime.combine(self.date, time(0, 0))  # 00:00 pour référence
+            
+            # Calculer la durée totale de travail sans la pause
+            duree_travail = fin_datetime - debut_datetime
+            duree_pause = pause_datetime - min_time
+            duree_totale = duree_travail - duree_pause
 
+            # Retourner en format HH:MM:SS
+            return str(duree_totale)
+        
+        return "00:00:00"  # Retourne 00:00:00 si les données sont incomplètes
+    
+    @property
+    def difference_travail_reel_theorique(self):
+        if not self.users_badged_shift:
+            return "00:00:00"
+        
+        """
+        Retourne la différence entre la durée de travail théorique et le temps de travail effectif.
+        Format : HH:MM:SS (positif si surplus, négatif si manque).
+        """
+        # Obtenir la durée théorique
+        try:
+            duree_theorique = datetime.strptime(self.duree_travail_theorique, "%H:%M:%S") - datetime.strptime("00:00:00", "%H:%M:%S")
+        except ValueError:
+            return "00:00:00"  # Gérer les erreurs de conversion
+
+        # Obtenir le temps de travail effectif (assumant que `calcul_temps_travail` est déjà au format HH:MM:SS)
+        try:
+            duree_reelle = datetime.strptime(self.users_badged_shift.calcul_temps_travail, "%H:%M:%S") - datetime.strptime("00:00:00", "%H:%M:%S")
+        except ValueError:
+            return "00:00:00"
+
+        # Calculer la différence (peut être négative ou positive)
+        difference = int(duree_reelle.total_seconds()) - int(duree_theorique.total_seconds())
+        sign = "-" if difference < 0 else ""
+        total_seconds = abs(difference) # on obtient l'absolu
+        # Convertir en HH:MM:SS
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        # Retourner en format HH:MM:SS
+        return f"{sign}{hours:02}h{minutes:02}" if difference else "00:00:00"
+    
 class Week(models.Model):
     week_number = models.IntegerField()
     first_day = models.DateField(max_length=20)

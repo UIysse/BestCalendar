@@ -26,22 +26,25 @@ def logout_user(request):
 	return redirect('home')
 
 def register_user(request):
-	if request.method == "POST":
-		form = RegisterUserForm(request.POST)
-		if form.is_valid():
-			form.save()
-			username = form.cleaned_data['username']
-			password = form.cleaned_data['password1']
-			user = authenticate(username=username, password=password)
-			login(request, user)
-			messages.success(request, 'Votre compte a été créé avec succès !')
-			return redirect('home')
-		else:
-			print(form.errors)  # Debug: Affichez les erreurs dans la console
-			messages.error(request, 'Veuillez corriger les erreurs ci-dessous.')
-	else:
-		form = RegisterUserForm()
+    # ✅ Rediriger les utilisateurs connectés vers la page d'accueil
+    if request.user.is_authenticated:
+        messages.info(request, "Vous êtes déjà connecté.")
+        return redirect('home')  # Change 'home' par la page de ton choix
 
-	return render(request, 'authenticate/register_user.html', {
-		'form':form,
-		})
+    if request.method == "POST":
+        form = RegisterUserForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['password1']
+            user = authenticate(username=username, password=password)
+            login(request, user)
+            messages.success(request, 'Votre compte a été créé avec succès !')
+            return redirect('home')
+        else:
+            print(form.errors)  # Debug: Affichez les erreurs dans la console
+            messages.error(request, 'Veuillez corriger les erreurs ci-dessous.')
+    else:
+        form = RegisterUserForm()
+
+    return render(request, 'authenticate/register_user.html', {'form': form})

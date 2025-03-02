@@ -4,9 +4,10 @@ from django.views.decorators.csrf import csrf_protect, csrf_exempt
 import json
 from django.http import JsonResponse, HttpResponse
 from datetime import date, datetime, timedelta
+from django.utils import timezone
 from django.utils.timezone import now
 from .models import Employe, TeamPlanning, Week, UsersBadgedShifts
-from .forms import EmployeForm, ModifyEmployeform, ModifyPlanningForm, ContactForm, SelectionForm
+from .forms import EmployeForm, ModifyEmployeForm, ModifyPlanningForm, ContactForm, SelectionForm
 
 # Create your views here.
 from django.http import HttpResponse
@@ -53,7 +54,7 @@ def badge_log(request):
 
         pin = request.POST.get('pin')
         entreprise_user = request.user.entreprise
-        current_time = now().time()
+        current_time = timezone.localtime().time()
         current_date = now().date()
         arrivee_ou_depart = ""
         try:
@@ -95,9 +96,10 @@ def badge_log(request):
                     Employe=employe,
                     date=current_date,
                     Heurededébut=current_time,
-                    heuredefin=(datetime.combine(current_date, current_time) + timedelta(hours=8)).time(),  # Estimation fin
+                    heuredefin="20:00",
                     duréepause="00:30",  # Valeur par défaut
                     Poste=employe.Poste,  # Par défaut
+                    is_unscheduled = True,
                     users_badged_shift=shift
                 )
             return JsonResponse({'status': 'success', 'message': f'{arrivee_ou_depart} pour {employe.firstname} {employe.name}'})
@@ -319,12 +321,12 @@ def modify_employe(request, employe_id):
     employe = get_object_or_404(Employe, pk=employe_id)
 
     if request.method == 'POST':
-        form = ModifyEmployeform(request.POST, instance=employe)
+        form = ModifyEmployeForm(request.POST, instance=employe)
         if form.is_valid():
             form.save()
             return redirect('team_members_page')  # Redirect to the employee list page
     else:
-        form = ModifyEmployeform(instance=employe)  # Pass employe_id here
+        form = ModifyEmployeForm(instance=employe)  # Pass employe_id here
 
     return render(request, 'base/modify_employe.html', {'form': form, 'employe_id': employe_id})
 

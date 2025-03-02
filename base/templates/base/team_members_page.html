@@ -5,39 +5,72 @@
 <div style="display:none;" id="csrf-token">
     {% csrf_token %}
 </div>
-<div class = "container">
-    <h2>Effectif</h2>
-    <div class = "table-responsive-lg">
-        <table class = "table table-hover">
-            <thead>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold text-primary">Effectif</h2>
+        <a href="{% url 'create_employe' %}" class="btn btn-success">
+            <i class="bi bi-person-plus-fill"></i> Ajouter
+        </a>
+    </div>
+
+    <!-- Barre de recherche -->
+    <div class="mb-3">
+        <input type="text" id="searchInput" class="form-control" placeholder="🔍 Rechercher un employé...">
+    </div>
+
+    <div class="table-responsive-lg">
+        <table class="table table-hover align-middle table-striped">
+            <thead class="table-dark">
                 <tr>
-                    <th style="width: 150px;">Nom</th>
-                    <th style="width: 150px;">Prénom</th>
-                    <th style="width: 150px;">Poste</th>
-                    <th style="width: 150px;">Contact</th>
-                    <th style="width: 150px;">Action</th>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>Poste</th>
+                    <th>Badge-code</th>
+                    <th>Contact</th>
+                    <th class="text-center">Action</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="employeeTable">
                 {% for emp in employe %}
                 <tr>
-                    <td>{{emp.name}}</td>
-                    <td>{{emp.firstname}}</td>
-                    <td>{{emp.Poste}}</td>
-                    <td><i class="bi bi-envelope"></i> {{emp.e_mail}} <br> <i class="bi bi-telephone"></i> {{emp.phone_number}}</td>
-                    <td><a href="{% url 'modify_employe' emp.id %}" target="_blank">Edit</a>
-                        <a href="javascript:void(0);" onclick="confirmDelete({{ emp.id }})">Delete</a></td>
+                    <td>{{ emp.name }}</td>
+                    <td>{{ emp.firstname }}</td>
+                    <td>{{ emp.Poste }}</td>
+                    <td>{{ emp.employee_CodePin }}</td>
+                    <td>
+                        <i class="bi bi-envelope text-primary"></i> {{ emp.e_mail }}<br>
+                        <i class="bi bi-telephone text-success"></i> {{ emp.phone_number }}
+                    </td>
+                    <td class="text-center">
+                        <a href="{% url 'modify_employe' emp.id %}" class="btn btn-warning btn-sm">
+                            <i class="bi bi-pencil-square"></i>
+                        </a>
+                        <button class="btn btn-danger btn-sm" onclick="confirmDelete({{ emp.id }})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    <a href="{% url 'create_employe' %}" class="btn btn-primary">+</a>
 </div>
+
 <script>
+    // ✅ Fonction pour filtrer les employés dynamiquement
+    document.getElementById("searchInput").addEventListener("keyup", function () {
+        let filter = this.value.toLowerCase();
+        let rows = document.querySelectorAll("#employeeTable tr");
+        rows.forEach(row => {
+            let text = row.innerText.toLowerCase();
+            row.style.display = text.includes(filter) ? "" : "none";
+        });
+    });
+
+    // ✅ Fonction pour confirmer la suppression
     function confirmDelete(empId) {
-        if (confirm('Are you sure you want to delete this employee?')) {
-            // Perform the delete operation
+        if (confirm('Voulez-vous vraiment supprimer cet employé ?')) {
             fetch("{% url 'delete_employe' %}", {
                 method: 'POST',
                 headers: {
@@ -48,23 +81,20 @@
             })
             .then(response => response.json())
             .then(data => {
-                // Handle the response data
-                console.log(data);
                 if (data.deleted) {
-                    // If successfully deleted, remove the row or refresh the page
-                    location.reload(); // This will refresh the page
+                    location.reload(); // Rafraîchir la page après suppression
                 }
             })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
+            .catch(error => console.error('Erreur:', error));
         }
     }
-    </script>
+</script>
 {% else %}
-<h1>Veuillez vous connecter pour accéder à cette page web</h1>
-
-<a href="{% url 'login' %}">Se connecter</a>
-
+<h1 class="text-center mt-5">Veuillez vous connecter pour accéder à cette page</h1>
+<div class="text-center">
+    <a href="{% url 'login' %}" class="btn btn-primary">
+        <i class="bi bi-box-arrow-in-right"></i> Se connecter
+    </a>
+</div>
 {% endif %}
 {% endblock %}

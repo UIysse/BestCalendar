@@ -3,81 +3,89 @@
 {% block content %}
 {% if user.is_authenticated %}
 <div class="container mt-5">
-    <h2 class="mb-4">Modify Employe</h2>
+    <h2 class="fw-bold text-primary mb-4">
+        <i class="bi bi-person-lines-fill"></i> Modifier un employé
+    </h2>
 
-    <form method="post" action="{% url 'modify_employe' employe_id %}" class="needs-validation" novalidate>
-        {% csrf_token %}
-        <!-- Name Field -->
-        <div class="form-group row">
-            <label for="{{ form.name.id_for_label }}" class="col-sm-2 col-form-label">{{ form.name.label_tag }}</label>
-            <div class="col-sm-10">
+    <div class="card shadow-lg p-4">
+        <form method="post" action="{% url 'modify_employe' employe_id %}" class="needs-validation" novalidate>
+            {% csrf_token %}
+
+            <!-- Nom -->
+            <div class="mb-3">
+                <label for="{{ form.name.id_for_label }}" class="form-label">
+                    <i class="bi bi-person"></i> Nom
+                </label>
                 {{ form.name }}
                 <div class="invalid-feedback">{{ form.name.errors }}</div>
             </div>
-        </div>
 
-        <!-- prénom Field -->
-        <div class="form-group row">
-            <label for="{{ form.name.id_for_label }}" class="col-sm-2 col-form-label">{{ form.firstname.label_tag }}</label>
-            <div class="col-sm-10">
+            <!-- Prénom -->
+            <div class="mb-3">
+                <label for="{{ form.firstname.id_for_label }}" class="form-label">
+                    <i class="bi bi-person"></i> Prénom
+                </label>
                 {{ form.firstname }}
                 <div class="invalid-feedback">{{ form.firstname.errors }}</div>
             </div>
-        </div>
 
-        <!-- Position Field -->
-        <div class="form-group row">
-            <label for="{{ form.Poste.id_for_label }}" class="col-sm-2 col-form-label">{{ form.phone_number.label_tag }}</label>
-            <div class="col-sm-10">
+            <!-- Téléphone -->
+            <div class="mb-3">
+                <label for="{{ form.phone_number.id_for_label }}" class="form-label">
+                    <i class="bi bi-telephone"></i> Téléphone
+                </label>
                 {{ form.phone_number }}
                 <div class="invalid-feedback">{{ form.phone_number.errors }}</div>
             </div>
-        </div>
 
-        <!-- Position Field -->
-        <div class="form-group row">
-            <label for="{{ form.Poste.id_for_label }}" class="col-sm-2 col-form-label">{{ form.e_mail.label_tag }}</label>
-            <div class="col-sm-10">
+            <!-- Email -->
+            <div class="mb-3">
+                <label for="{{ form.e_mail.id_for_label }}" class="form-label">
+                    <i class="bi bi-envelope"></i> Email
+                </label>
                 {{ form.e_mail }}
                 <div class="invalid-feedback">{{ form.e_mail.errors }}</div>
             </div>
-        </div>
 
-        <!-- Position Field -->
-        <div class="form-group row">
-            <label for="{{ form.Poste.id_for_label }}" class="col-sm-2 col-form-label">{{ form.Poste.label_tag }}</label>
-            <div class="col-sm-10">
+            <!-- Poste -->
+            <div class="mb-3">
+                <label for="{{ form.Poste.id_for_label }}" class="form-label">
+                    <i class="bi bi-briefcase"></i> Poste
+                </label>
                 {{ form.Poste }}
                 <div class="invalid-feedback">{{ form.Poste.errors }}</div>
             </div>
-        </div>
 
-        <!-- Add other fields as needed -->
-        <div class="form-group row">
-            <label for="{{ form.EntrepriseRattachée.id_for_label }}" class="col-sm-2 col-form-label">{{ form.EntrepriseRattachée.label_tag }}</label>
-            <div class="col-sm-10">
-                {{ form.EntrepriseRattachée }}
-                <div class="invalid-feedback">{{ form.EntrepriseRattachée.errors }}</div>
+            <!-- Boutons -->
+            <div class="text-center mt-4">
+                <a href="{% url 'team_members_page' %}" class="btn btn-secondary px-4">
+                    <i class="bi bi-arrow-left"></i> Annuler
+                </a>
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-check-circle"></i> Sauvegarder
+                </button>
             </div>
-        </div>
-        <button type="submit" class="btn btn-primary">Modify Employe</button>
-    </form>
+        </form>
+    </div>
 </div>
 
-<!-- Include Bootstrap JS (optional, if you want to use Bootstrap features that require JS) -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+{% else %}
+<h1 class="text-center mt-5">Veuillez vous connecter</h1>
+<div class="text-center">
+    <a href="{% url 'login' %}" class="btn btn-primary">
+        <i class="bi bi-box-arrow-in-right"></i> Se connecter
+    </a>
+</div>
+{% endif %}
+{% endblock %}
 
+<!-- Bootstrap validation -->
 <script>
-// Bootstrap validation script
 (function() {
     'use strict';
     window.addEventListener('load', function() {
-        // Fetch all the forms we want to apply custom Bootstrap validation styles to
         var forms = document.getElementsByClassName('needs-validation');
-        // Loop over them and prevent submission
-        var validation = Array.prototype.filter.call(forms, function(form) {
+        Array.prototype.filter.call(forms, function(form) {
             form.addEventListener('submit', function(event) {
                 if (form.checkValidity() === false) {
                     event.preventDefault();
@@ -89,10 +97,3 @@
     }, false);
 })();
 </script>
-{% else %}
-<h1>Veuillez vous connecter pour accéder à cette page web</h1>
-
-<a href="{% url 'login' %}">Se connecter</a>
-
-{% endif %}
-{% endblock %}
