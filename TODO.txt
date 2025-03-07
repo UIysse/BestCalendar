@@ -16,3 +16,4 @@ empecher employeur denvoyer salarié dans autre entreprise !
 finaliser le register et empeche de register quand deja connecter, aussi verification mail
 faire la page mon profile
 rendre le site user friendly sur smartphone et tablette
+mettre un filtre employé sur la page planning

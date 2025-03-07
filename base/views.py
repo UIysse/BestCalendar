@@ -4,9 +4,10 @@ from django.views.decorators.csrf import csrf_protect, csrf_exempt
 import json
 from django.http import JsonResponse, HttpResponse
 from datetime import date, datetime, timedelta
+from django.contrib import messages
 from django.utils import timezone
 from django.utils.timezone import now
-from .models import Employe, TeamPlanning, Week, UsersBadgedShifts
+from .models import Employe, TeamPlanning, Week, UsersBadgedShifts, Poste
 from .forms import EmployeForm, ModifyEmployeForm, ModifyPlanningForm, ContactForm, SelectionForm
 
 # Create your views here.
@@ -135,6 +136,57 @@ def team_members_page(request):
     employe = Employe.objects.filter(EntrepriseRattachée=user_entreprise)
     context = {'employe' : employe}
     return render(request, 'base/team_members_page.html', context)
+
+def update_shift(request):
+    if request.method == "POST":
+        shift_id = request.POST.get("shift_id")
+        new_employe_id = request.POST.get("new_employe_id")
+        new_poste = request.POST.get("new_poste")
+        new_date = request.POST.get("new_date")
+        new_start_time = request.POST.get("new_start_time")
+        new_end_time = request.POST.get("new_end_time")
+        new_pause_duration = request.POST.get("new_pause_duration")
+        new_note = request.POST.get("new_note")
+        action = request.POST.get("actionButton")
+        employe = get_object_or_404(Employe, id=new_employe_id)
+
+        if action == "copier":
+            try:
+                new_shift = TeamPlanning.objects.create(
+                    Employe=employe,
+                    date=new_date,
+                    Heurededébut=new_start_time,
+                    heuredefin=new_end_time,
+                    duréepause=new_pause_duration,
+                    is_overtime=False,
+                    Poste=employe.Poste,
+                    note=new_note if new_note != "undefined" else ""
+                )
+                new_shift.save()
+                #messages.success(request, "Shift moved successfully!")
+            except Exception as e:
+                messages.error(request, f"❌ Error: {str(e)}")
+        elif action == "deplacer":
+            try:
+                shift = get_object_or_404(TeamPlanning, id=shift_id)
+                shift.delete()
+                new_shift = TeamPlanning.objects.create(
+                    Employe=employe,
+                    date=new_date,
+                    Heurededébut=new_start_time,
+                    heuredefin=new_end_time,
+                    duréepause=new_pause_duration,
+                    is_overtime=False,
+                    Poste=employe.Poste,
+                    note=new_note if new_note != "undefined" else ""
+                )
+                new_shift.save()
+                #messages.success(request, "Shift moved successfully!")
+            except Exception as e:
+                messages.error(request, f"❌ Error: {str(e)}")
+
+
+    return redirect("planning")  # 🔄 Reload page
 
 def planning(request, year=None, week=None):
     # Générer les semaines pour 2025 et 2026

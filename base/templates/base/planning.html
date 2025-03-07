@@ -30,10 +30,19 @@
     <tbody>
         {% for emp in employe %}
             <tr>
-                <td style = "font-size: 16px;">{{ emp.firstname }} {{ emp.name }}</td>
+                <td class ="employee-cell">
+                {{ emp.firstname }} {{ emp.name }}
+                </td>
                 {% for day in days %}
                     <!-- Shift code here -->
-                                <td onclick="openModal(this, '{{ emp.id }}', '{{ emp.name }}', '{{ emp.firstname }}', '{{ emp.Poste.id }}', '{{ day|date:'Y-m-d' }}')">
+                                <td class ="outter-cell" 
+                                style = "font-size: 16px;" 
+                                ondragover="allowDrop(event)" 
+                                ondrop="dropShift(event); resetDropEffects(event);"
+                                ondragleave="dragLeave(event)"
+                                onclick="openModal(this, '{{ emp.id }}', '{{ emp.name }}', '{{ emp.firstname }}', '{{ emp.Poste.id }}', '{{ day|date:'Y-m-d' }}')"
+                                data-EmployeId = "{{ emp.id }}"
+                                data-date = "{{ day|date:'Y-m-d' }}">
                                     <i class="bi bi-plus-circle-fill plus-icon"></i>
                                     <table border="1">
                                         {% for key, value in shifts_by_emp_and_day.items %}
@@ -43,6 +52,9 @@
                                                         {% for nitem in value1 %}
                                                             <tr style="background-color: {% if nitem.is_overtime %}red{% elif nitem.is_absence%}lightgray{% else %}{{ nitem.Poste.couleur }}{% endif %};"><!-- si heure sup couleur rouge autrement couleur du poste-->
                                                                 <td class="shift-cell {% if nitem.is_unscheduled %}unscheduled-shift{% endif %}"
+                                                                    draggable="true"
+                                                                    ondragstart="dragStart(event)" 
+                                                                    ondragover="allowDrop(event)"
                                                                     onclick="openInnerModal(event, this)"
                                                                     data-date = "{{ day|date:'Y-m-d' }}"
                                                                     data-Heurededébut="{{ nitem.Heurededébut }}"
@@ -70,6 +82,9 @@
                                                                             {% for arrivee, depart in nitem.users_badged_shift.heures_arrivees|zip_lists:nitem.users_badged_shift.heures_departs %}
                                                                                 🔹 {{ arrivee }} - {{ depart|default:'❓' }} <br>
                                                                             {% endfor %}
+                                                                            {% if nitem.users_badged_shift.heures_arrivees|length > nitem.users_badged_shift.heures_departs|length %}
+                                                                                🔹 {{ nitem.users_badged_shift.heures_arrivees|last }} - ❓ <br>
+                                                                            {% endif %}
                                                                         {% else %}
                                                                             ❌ Aucun badge enregistré
                                                                         {% endif %}
@@ -81,7 +96,7 @@
                                                                     {% if nitem.is_absence %}
                                                                           - {{nitem.TypeAbsence}}
                                                                     {% endif %}
-                                                                    <div style="width: 80%; height: 20px; background-color: {{ nitem.Poste.couleur }}; overflow: hidden; text-overflow: ellipsis ;">{{nitem.Poste}}</div>
+                                                                    <div class ="PosteCss" style="width: 80%; height: 20px; background-color: {{ nitem.Poste.couleur }}; overflow: hidden; text-overflow: ellipsis ;">{{nitem.Poste}}</div>
                                                                 </td>
                                                             </tr>
                                                         {% endfor %}
@@ -384,6 +399,19 @@
         </div>
     </div>
 </div>
+<!-- The Drag copier deplacer form-->
+<form id="shiftForm" method="POST" action="{% url 'update_shift' %}">
+    {% csrf_token %}
+    <input type="hidden" name="shift_id" id="shiftIdInput">
+    <input type="hidden" name="new_employe_id" id="newEmployeIdInput">
+    <input type="hidden" name="new_poste" id="newPosteInput">
+    <input type="hidden" name="new_date" id="newDateInput">
+    <input type="hidden" name="new_start_time" id="newStartTimeInput">
+    <input type="hidden" name="new_end_time" id="newEndTimeInput">
+    <input type="hidden" name="new_pause_duration" id="newPauseDurationInput">
+    <input type="hidden" name="new_note" id="newNoteInput">
+    <input type="hidden" name="actionButton" id="actionButtonInput">
+</form>
 <!-- The Modal which copies shifts -->
 <div id="ModalCopy" class="modal">
     <div class="modal-dialog" role="document">
@@ -736,8 +764,6 @@ document.getElementById('modalSubmitBtn').addEventListener('click', function() {
         activeDays.push(checkbox.id.replace('btn-check-', '')); // Removes the prefix to get the day
     });
     
-    // Now, activeDays contains the list of ids (days) of all active buttons
-    console.log(activeDays); // For demonstration, log the active days to the console
 
     // Populate the hidden form fields with these values
     modalCopy.querySelector('input[name="employees"]').value = selectedEmployeeIds.join(',');
@@ -822,6 +848,148 @@ document.getElementById('modalDeleteShiftsSubmitBtn').addEventListener('click', 
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
     });
+    
+    let draggedShift = null; // Stocke la cellule source
+
+    function dragStart(event) {
+        draggedShift = event.target; 
+        let targetCell = event.target.closest(".shift-cell");
+        if (targetCell) {
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", event.target.dataset.shiftId); // Stocke l'ID
+            targetCell.setAttribute("data-original-text", targetCell.textContent); // Sauvegarde du texte original
+            // 📌 Créer un élément fantôme (ghost) personnalisé
+            let dragGhost = targetCell.cloneNode(true); // Clone la cellule
+            dragGhost.style.position = "absolute";
+            dragGhost.style.top = "-9999px"; // On le place hors de l'écran pour qu'il ne soit pas visible dans le DOM
+            dragGhost.style.opacity = "0.2"; // 🔥 Réduction de l'opacité
+            dragGhost.style.background = "rgba(255, 255, 255, 0.2)"; // Optionnel : fond semi-transparent
+            dragGhost.style.padding = "5px"; // Ajuster l'espacement pour une meilleure apparence
+            dragGhost.style.borderRadius = "8px"; // Ajouter un arrondi
+            dragGhost.style.boxShadow = "0px 4px 6px rgba(0,0,0,0.2)"; // Ombre pour un effet plus visuel
+
+            document.body.appendChild(dragGhost); // Ajoute le ghost temporaire au document
+            event.dataTransfer.setDragImage(dragGhost, 0, 0); // 📌 Définit le ghost personnalisé comme image de drag
+
+            setTimeout(() => {
+                document.body.removeChild(dragGhost); // Supprime après le drag
+            }, 0);
+        }
+    }
+
+    function allowDrop(event) {
+        event.preventDefault();
+        let targetCell = event.target.closest("td");
+        
+        // 🚫 Forcer l'affichage de l'icône interdit sur shift-cell
+        if (targetCell && targetCell.classList.contains("shift-cell")) {
+            event.stopPropagation(); // Empêche la propagation vers outter-cell
+            return; // Ne fait pas event.preventDefault() → Le navigateur affiche 🚫
+        }
+        if (targetCell) {
+            let rect = targetCell.getBoundingClientRect(); // Récupérer les dimensions de la cellule
+            let mouseX = event.clientX - rect.left; // Position de la souris relative à la cellule
+            let halfWidth = rect.width / 2; // Moitié de la largeur
+
+            // Supprimer toutes les classes d'animation pour éviter l'accumulation
+            targetCell.classList.remove("left-drop", "right-drop", "valid-drop", "invalid-drop");
+
+
+            if (targetCell.classList.contains("outter-cell")) {
+                if (mouseX < halfWidth) {
+                    targetCell.classList.add("left-drop"); // Animation spéciale moitié gauche 🔵
+                } else {
+                    targetCell.classList.add("right-drop"); // Animation spéciale moitié droite 🔴
+                }
+            }
+        }
+    }
+
+    // ❌ Enlever les animations quand l'élément quitte la cellule
+    function dragLeave(event) {
+        let targetCell = event.target.closest("td");
+        if (targetCell) {
+            targetCell.classList.remove("left-drop", "right-drop", "valid-drop", "invalid-drop");
+        }
+    }
+
+
+    // 📌 Gérer le drop (Copie des données + Supprimer les animations)
+    function dropShift(event) {
+        event.preventDefault();
+
+        let targetCell = event.target.closest("td");
+        if (!targetCell || !draggedShift) return;
+        if (!targetCell || targetCell.classList.contains("shift-cell")) {
+            return; // ⛔ Empêche le drop sur les cellules celldata
+        }
+
+        // 📌 Afficher toutes les données de la cellule cible
+        console.log("🔽 Données de la cellule où l'on drop :", targetCell.dataset);
+
+        // ✅ Autoriser uniquement le drop sur outter-cell
+        if (targetCell.classList.contains("outter-cell")) {
+            // ✅ Récupération de toutes les données disponibles
+            let shiftId = draggedShift.dataset.shiftid || "undefined";
+            let newEmployeId = draggedShift.dataset.employeid || "undefined";
+            let employeFirstName = draggedShift.dataset.employefirstname || "undefined";
+            let employeName = draggedShift.dataset.employename || "undefined";
+            let posteId = draggedShift.dataset.poste || "undefined";
+            let startTime = draggedShift.dataset.heurededébut || "undefined";
+            let endTime = draggedShift.dataset.heuredefin || "undefined";
+            let pauseDuration = draggedShift.dataset.dureePause || "undefined";
+            let note = draggedShift.dataset.note || "undefined";
+            let newDate = draggedShift.dataset.date || "undefined";
+            
+            //data de la cellule cible
+            let newDateTarget = targetCell.dataset.date || "undefined";
+            let newEmployeIdTarget = targetCell.dataset.employeid || "undefined";
+
+            // 📌 Vérifier toutes les valeurs dans la console
+            console.log("🔄 Mise à jour du shift avec les données suivantes :", {
+                shift_id: shiftId,
+                new_employe_id: newEmployeId,
+                employe_firstname: employeFirstName,
+                employe_name: employeName,
+                poste_id: posteId,
+                start_time: startTime,
+                end_time: endTime,
+                pause_duration: pauseDuration,
+                note: note,
+                new_date: newDate
+            });
+            // Fill the hidden form
+            document.getElementById("shiftIdInput").value = shiftId;
+            document.getElementById("newEmployeIdInput").value = newEmployeIdTarget;
+            document.getElementById("newPosteInput").value = posteId;
+            document.getElementById("newDateInput").value = newDateTarget;
+            document.getElementById("newStartTimeInput").value = startTime;
+            document.getElementById("newEndTimeInput").value = endTime;
+            document.getElementById("newPauseDurationInput").value = pauseDuration;
+            document.getElementById("newNoteInput").value = note;
+            document.getElementById("actionButtonInput").value = "copier";
+            if (targetCell.classList.contains("left-drop")) {
+                document.getElementById("actionButtonInput").value = "deplacer";
+            } else if (targetCell.classList.contains("right-drop")) {
+                document.getElementById("actionButtonInput").value = "copier";
+            }
+            // Submit the form automatically
+            document.getElementById("shiftForm").submit();
+            // 📌 Remplir et soumettre le formulaire caché
+            //document.getElementById("shiftIdInput").value = shiftId;
+            //document.getElementById("newEmployeIdInput").value = newEmployeId;
+            //document.getElementById("newDateInput").value = newDate;
+            //document.getElementById("shiftForm").submit(); // 🔄 Recharge la page après envoi
+        }
+    }
+
+    function resetDropEffects(event) {
+        let targetCell = document.querySelectorAll(".outter-cell, .shift-cell"); // Sélectionne toutes les cellules concernées
+        targetCell.forEach(cell => {
+            cell.classList.remove("left-drop", "right-drop", "valid-drop", "invalid-drop");
+        });
+    }
+
 </script>
 <!--<script>
     document.querySelectorAll('.shift-cell').forEach(cell => {

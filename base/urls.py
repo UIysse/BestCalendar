@@ -11,6 +11,7 @@ urlpatterns = [
     path('badge/', views.badge_log, name='badge_log'),
     path('create_employe/', views.create_employe, name='create_employe'),
     path('modify_employe/<int:employe_id>/', views.modify_employe, name='modify_employe'),
+    path("update-shift/", views.update_shift, name="update_shift"),
     path('planning/', views.planning, name='planning'),  # Without parameters
     path('planning/<int:year>/<int:week>/', views.planning, name='planning_with_params'),  # With parameters
     path('planning/delete/', views.delete_employe, name='delete_employe'),

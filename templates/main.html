@@ -97,7 +97,17 @@
     background-color: transparent;
     border: none;
 }
-
+.outter-cell {
+    border-radius: 10px !important;
+}
+.shift-cell {
+    border-radius: 10px !important;
+}
+.PosteCss { /*ce code est en cours de travail et n'a aucun effet sur le site actuellement*/
+    border-radius: 10px !important;
+    border-color: black;
+    text-align: center;
+}
 /* Effet sur les sous-cellules (pour qu'elles ne perturbent pas l'effet principal) */
 .shift-cell:hover {
     background-color: rgba(255, 255, 255, 0.3);
@@ -143,20 +153,72 @@
     font-size: 16px;
 }
 
-        /* Add your CSS styles here */
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
+/* Add your CSS styles here */
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
 
-        th, td {
-            font-size: 12px;
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        /* The Modal (background) */
+th, td {
+    font-size: 12px;
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
 
+/* 🔵 Encadré bleu pour la moitié gauche */
+.left-drop::before {
+    content: "Déplacer"; /* Texte affiché */
+    font-weight: bold; /* Texte en gras */
+    color: white; /* Texte blanc */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50%; /* Occupe la moitié gauche */
+    height: 100%;
+    background: rgba(0, 0, 255, 0.3); /* Fond bleu semi-transparent */
+    border-left: 4px solid blue; /* Bordure gauche plus visible */
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Centrage vertical et horizontal */
+    pointer-events: none; /* Évite que l'élément interfère avec le drag */
+}
+/* 🔵 Animation spéciale pour la moitié gauche */
+.left-drop {
+    background: linear-gradient(to right, rgba(0, 0, 255, 0.3), transparent);
+    border-left: 4px solid blue;
+    text-align:left;
+    transition: all 0.2s ease-in-out;
+}
+/* 🔴 Encadré orange pour la moitié droite */
+.right-drop::before {
+    content: "Copier"; /* Texte affiché */
+    font-weight: bold; /* Texte en gras */
+    color: white; /* Texte blanc */
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 50%; /* Occupe la moitié droite */
+    height: 100%;
+    background: rgba(255, 165, 0, 0.3); /* Fond orange semi-transparent */
+    border-right: 4px solid orange; /* Bordure droite plus visible */
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Centrage vertical et horizontal */
+    pointer-events: none; /* Évite que l'élément interfère avec le drag */
+}
+/* 🔴 Animation spéciale pour la moitié droite */
+.right-drop {
+    background: linear-gradient(to left, rgba(255, 165, 0, 0.3), transparent);
+    border-right: 4px solid orange;
+    text-align: right;
+    transition: all 0.2s ease-in-out;
+}
+/* Assurer que les effets sont bien visibles */
+.outter-cell {
+    position: relative; /* Nécessaire pour les pseudo-éléments */
+    overflow: hidden; /* Évite que les effets débordent */
+}
 
 /* Modal Content/Box */
 .modal-content {
