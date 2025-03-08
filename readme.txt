@@ -5,10 +5,13 @@ normalement cest activé.
 3) se positionner dans le bon dossier
 cd /home/glenn/BestCalendar # se met dans le dossierBestcalendar
 4) sauvegarde la database
-mv db.sqlite3 db.sqlite3.backup  # Sauvegarde en cas de problème
+soit cp db.sqlite3 db_backup_$(date +"%Y%m%d%H%M%S").sqlite3 pour dupliquer la db
+soit mv db.sqlite3 db.sqlite3.backup  # Sauvegarde en cas de problème
 git stash push db.sqlite3 : Cache la base de données avant la mise à jour.
 git pull origin main : Récupère les changements depuis GitHub.
 git stash pop : Remet SQLite en place après la mise à jour.
+ramener la db :
+mv db.sqlite3.backup db.sqlite3
 5)
 si un probleme chatgpt explique comment connaitre les backup de la database et les reimplémenter.
 si un mdp pour glenn est demandé : 111990

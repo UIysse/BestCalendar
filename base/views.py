@@ -184,8 +184,9 @@ def update_shift(request):
                 #messages.success(request, "Shift moved successfully!")
             except Exception as e:
                 messages.error(request, f"❌ Error: {str(e)}")
-
-
+                
+    date_obj = datetime.strptime(new_date, "%Y-%m-%d").date()
+    return redirect('planning_with_params', year=date_obj.year, week=date_obj.isocalendar()[1])
     return redirect("planning")  # 🔄 Reload page
 
 def planning(request, year=None, week=None):
