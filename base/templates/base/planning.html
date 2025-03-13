@@ -49,7 +49,7 @@
         {% for emp in employe %}
             <tr data-employee-id="{{ emp.id }}" class="employee-row">
                 <td class ="employee-cell">
-                    <strong><span class ="employeeStyle drag-handle" title="Glisser pour réordonner">☰ </span><span class ="employeeStyle">{{ emp.firstname }} {{ emp.name }}</span> <span class ="value-right">{% travail_hebdo emp start_date|date:'W' start_date|add_days:3|date:'Y' as heures_travaillees %} {{ heures_travaillees }}</span></strong>
+                    <strong><span class ="employeeStyle drag-handle" title="Glisser pour réordonner">☰ </span><span class ="employee-name">{{ emp.firstname }} {{ emp.name }}</span> <span class ="value-right">{% travail_hebdo emp start_date|date:'W' start_date|add_days:3|date:'Y' as heures_travaillees %} {{ heures_travaillees }}</span></strong>
                 </td>
                 {% for day in days %}
                     <!-- Shift code here -->
@@ -962,7 +962,7 @@ document.getElementById('modalDeleteShiftsSubmitBtn').addEventListener('click', 
         let rows = document.querySelectorAll("#table1 tbody tr"); // Select all employee rows
 
         rows.forEach(row => {
-            let nameCell = row.querySelector(".employeeStyle"); // Get the employee name cell
+            let nameCell = row.querySelector(".employee-name"); // Get the employee name cell
 
             if (nameCell) {
                 let text = nameCell.textContent.toLowerCase().trim(); // Get name & remove spaces

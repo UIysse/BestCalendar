@@ -19,3 +19,4 @@ rendre le site user friendly sur smartphone et tablette
 mass duplicate doit copier les HS en tant q heure sup
 protection login nouvel appareil en tant que badgeuse
 mettre un filtre employé sur la page planning
+print dans static et dans staticfiles, faut supprimer

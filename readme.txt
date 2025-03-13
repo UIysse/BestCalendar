@@ -12,6 +12,8 @@ git pull origin main : Récupère les changements depuis GitHub.
 git stash pop : Remet SQLite en place après la mise à jour.
 ramener la db :
 mv db.sqlite3.backup db.sqlite3
+redémarrer gurnicorn:
+sudo systemctl restart gunicorn
 5)
 si un probleme chatgpt explique comment connaitre les backup de la database et les reimplémenter.
 si un mdp pour glenn est demandé : 111990
