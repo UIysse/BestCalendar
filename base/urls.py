@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import update_employee_order
 #from .views import get_badge_hours
 
 urlpatterns = [
@@ -16,5 +17,6 @@ urlpatterns = [
     path('planning/<int:year>/<int:week>/', views.planning, name='planning_with_params'),  # With parameters
     path('planning/delete/', views.delete_employe, name='delete_employe'),
     path('admin/', views.admin_approval, name='admin_approval'),
+    path("update-employee-order/", update_employee_order, name="update_employee_order"),
     #path('api/get-badge-hours/<int:employe_id>/<str:date>/', get_badge_hours, name='get_badge_hours'),
 ]

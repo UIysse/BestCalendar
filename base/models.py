@@ -119,6 +119,10 @@ class Employe(models.Model):
     employee_CodePin = models.CharField(max_length=4, unique=True, blank=True, null=True)
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
+    display_order = models.PositiveIntegerField(default=0)
+    
+    class Meta:
+        ordering = ["display_order"]  # ✅ Ensure rows are displayed in order
 
     def save(self, *args, **kwargs):
         if not self.employee_CodePin:
@@ -132,6 +136,43 @@ class Employe(models.Model):
 
     def __str__(self):
         return self.name + ' ' + self.firstname
+    
+    def Temps_Travail_Hebdomadaire_Planning(self, semaine_chiffre, annee_chiffre):
+        """
+        Calcule le total des heures travaillées pour une semaine donnée.
+        :param semaine: Instance de la classe Week
+        :return: Durée totale sous format HH:MM:SS
+        """
+        # Trouver le premier jour de la semaine
+        semaine_dinteret = Week.objects.filter(week_number = semaine_chiffre, year = annee_chiffre).first()
+        if not semaine_dinteret:
+            return "n'a pas trouvé de semaine"
+        semaine_start_date = semaine_dinteret.first_day  # Supposons que `first_day` contient la date du lundi
+        # Filtrer les plannings de l'employé pour la semaine donnée
+        shifts = TeamPlanning.objects.none()
+        for i in range (7):
+            jour_date = semaine_start_date + timedelta(days=i) 
+            # Ajouter les shifts du jour en excluant les absences
+            shifts = shifts | TeamPlanning.objects.filter(Employe=self, date=jour_date).exclude(is_absence=True)
+
+        total_duree = timedelta()
+
+        for shift in shifts:
+            if shift:  
+                try:
+                    duree = shift.duree_travail_theorique
+                    if isinstance(duree, str):  
+                        h, m, s = map(int, duree.split(":"))  # Convertir en timedelta
+                        duree = timedelta(hours=h, minutes=m, seconds=s)
+                    total_duree += duree
+                except ValueError:
+                    continue  # Ignorer les erreurs de conversion
+
+        # Convertir en format HH:MM:SS
+        heures, remainder = divmod(total_duree.total_seconds(), 3600)
+        minutes, secondes = divmod(remainder, 60)
+
+        return f"{int(heures):02}h{int(minutes):02}"
 
 class UsersBadgedShifts(models.Model):
     Employe = models.ForeignKey(Employe, on_delete=models.SET_NULL, null=True)
@@ -249,6 +290,29 @@ class TeamPlanning(models.Model):
         return "00:00:00"  # Retourne 00:00:00 si les données sont incomplètes
     
     @property
+    def duree_travail_theorique_reformulee(self):
+        """Retourne la durée de travail théorique au format HH:MM:SS"""
+        if self.Heurededébut and self.heuredefin and self.duréepause:
+            # Convertir les TimeField en datetime pour pouvoir les soustraire
+            debut_datetime = datetime.combine(self.date, self.Heurededébut)
+            fin_datetime = datetime.combine(self.date, self.heuredefin)
+            pause_datetime = datetime.combine(self.date, self.duréepause)
+            min_time = datetime.combine(self.date, time(0, 0))  # 00:00 pour référence
+            
+            # Calculer la durée totale de travail sans la pause
+            duree_travail = fin_datetime - debut_datetime
+            duree_pause = pause_datetime - min_time
+            duree_totale = duree_travail - duree_pause
+
+            totalseconds = abs(int(duree_totale.total_seconds()))
+            hours, remainder = divmod(totalseconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            # Retourner en format HH:MM:SS
+            return f"{hours:02}h{minutes:02}" if totalseconds else "00:00:00"
+        
+        return "00:00:00"  # Retourne 00:00:00 si les données sont incomplètes
+    
+    @property
     def difference_travail_reel_theorique(self):
         if not self.users_badged_shift:
             return "00:00:00"
@@ -300,3 +364,40 @@ class Week(models.Model):
     def get_week_days(self):
         """Retourne une liste de tous les jours dans cette semaine."""
         return [self.first_day + timedelta(days=i) for i in range(7)]
+    
+    def travail_Journalier_Entreprise(self, jour_chiffre, semaine_chiffre, annee_chiffre, user):
+        """
+        Calcule le total des heures travaillées pour un jour donné (tous employés).
+        """
+        if jour_chiffre == 0:  #car en iso le le dimanche est le chiffre 0 - cela casse la fonction
+            jour_chiffre = 7
+         # Trouver le premier jour de la semaine
+        semaine_dinteret = Week.objects.filter(week_number = semaine_chiffre, year = annee_chiffre).first()
+        if not semaine_dinteret:
+            return "n'a pas trouvé de semaine"
+        semaine_start_date = semaine_dinteret.first_day  # Supposons que `first_day` contient la date du lundi
+        jour_date = semaine_start_date + timedelta(days=jour_chiffre - 1)
+        # Filtrer les plannings de l'employé pour la semaine donnée
+        shifts = TeamPlanning.objects.filter(
+            date=jour_date,
+            Employe__EntrepriseRattachée=user.entreprise,  # ✅ Only employees in the same enterprise as the user
+        ).exclude(is_absence=True)  # 📌 Exclure directement les absences
+
+        total_duree = timedelta()
+
+        for shift in shifts:
+            if shift:  
+                try:
+                    duree = shift.duree_travail_theorique
+                    if isinstance(duree, str):  
+                        h, m, s = map(int, duree.split(":"))  # Convertir en timedelta
+                        duree = timedelta(hours=h, minutes=m, seconds=s)
+                    total_duree += duree
+                except ValueError:
+                    continue  # Ignorer les erreurs de conversion
+
+        # Convertir en format HH:MM:SS
+        heures, remainder = divmod(total_duree.total_seconds(), 3600)
+        minutes, secondes = divmod(remainder, 60)
+
+        return f"{int(heures):02}h{int(minutes):02}"

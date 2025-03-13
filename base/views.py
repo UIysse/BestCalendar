@@ -47,6 +47,19 @@ def badgeuse(request):
 #         return JsonResponse({'status': 'error', 'message': 'Aucun badge trouvé'}, status=404)
     
 #Le code qui suit gère le badging des employés
+
+@csrf_exempt
+def update_employee_order(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            for item in data["order"]:
+                Employe.objects.filter(id=item["id"]).update(display_order=item["order"])
+            return JsonResponse({"status": "success"})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)})
+    return JsonResponse({"status": "invalid request"}, status=400)
+
 @csrf_exempt  # Ajoute la protection CSRF plus tard pour plus de sécurité
 def badge_log(request):
     if request.method == 'POST':
@@ -133,7 +146,7 @@ def team_members_page(request):
             pass #Normal behaviour, the page is displayed
     else:
         return HttpResponse("Vous devez vous connecter pour accèder à cette page")
-    employe = Employe.objects.filter(EntrepriseRattachée=user_entreprise)
+    employe = Employe.objects.filter(EntrepriseRattachée=user_entreprise).order_by("display_order")
     context = {'employe' : employe}
     return render(request, 'base/team_members_page.html', context)
 
@@ -236,7 +249,7 @@ def planning(request, year=None, week=None):
         for i in range(7)
     ]
     #employe = Employe.objects.all() #select the employees that belong to the same entreprise as the user
-    employe = Employe.objects.filter(EntrepriseRattachée=user_entreprise)
+    employe = Employe.objects.filter(EntrepriseRattachée=user_entreprise).order_by("display_order")
     teamPlanning = None
     if request.method == 'POST':
         if "action" in request.POST:#This, if true, sends to the "Add, edit, delete, add absence single shift route"
@@ -258,6 +271,7 @@ def planning(request, year=None, week=None):
                             team_planning_instance.Heurededébut = form.cleaned_data['Heurededébut']
                             team_planning_instance.heuredefin = form.cleaned_data['heuredefin']
                             team_planning_instance.duréepause = form.cleaned_data['duréepause']#duree_pause_timedelta
+                            team_planning_instance.is_overtime = form.cleaned_data['checkbox_field_heuresup']
                             team_planning_instance.note = form.cleaned_data['note']
                             team_planning_instance.save()
                         elif actionButton == 'delete':

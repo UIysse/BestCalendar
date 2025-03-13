@@ -5,19 +5,37 @@
 {% block content %}
 {% if user.is_authenticated %}
 {% if perms.members.custom_permission %}
-<div style="display: flex; justify-content: space-between; align-items: center;">
-    {{ start_date|add_days:3|date:'Y' }}, Semaine {{ start_date|date:'W' }}
-    <div>
-        <a class="bi bi-arrow-left-circle" style="font-size: 1.2em;" href="{% url 'planning_with_params' year=prev_year week=prev_week %}"></a>
-        <input type="date" id="datePicker" name="date" value="{{ start_date|date:'Y-m-d' }}">
-        <a class="bi bi-arrow-right-circle" style="font-size: 1.2em;" href="{% url 'planning_with_params' year=next_year week=next_week %}"></a>
+<div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+    <!-- Left Section: Start Date + Search Bar -->
+    <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
+        <span style="white-space: nowrap;">
+            {{ start_date|add_days:3|date:'Y' }}, Semaine {{ start_date|date:'W' }}
+        </span>
+        <input type="text" id="searchInput" class="form-control" 
+               placeholder="🔍 Rechercher un employé..." 
+               style="width: 100%; max-width: 400px;">
     </div>
-    <div>
-        <i class="bi bi-copy icon-overlay" style="font-size: 1.5em; padding-right: 5px; padding-left: 5px;" title="Copier des shifts" onclick = "CopyShifts()"></i>
-        <i class="bi bi-trash icon-overlay" style="font-size: 1.5em; padding-right: 5px; padding-left: 5px;" title="Supprimer des shifts" onclick = "DeleteShifts()"></i>
-        <i class="bi bi-printer icon-overlay" style="font-size: 1.5em; padding-right: 5px; padding-left: 5px;" title="Imprimer le planning" onclick="printTable()"></i>
+
+    <!-- Center Section: Navigation & Date Picker -->
+    <div style="display: flex; align-items: center; gap: 10px; flex: 1; justify-content: center;">
+        <a class="bi bi-arrow-left-circle" style="font-size: 1.2em;" 
+           href="{% url 'planning_with_params' year=prev_year week=prev_week %}"></a>
+        <input type="date" id="datePicker" name="date" value="{{ start_date|date:'Y-m-d' }}">
+        <a class="bi bi-arrow-right-circle" style="font-size: 1.2em;" 
+           href="{% url 'planning_with_params' year=next_year week=next_week %}"></a>
+    </div>
+
+    <!-- Right Section: Icons -->
+    <div style="display: flex; align-items: center; gap: 10px; flex: 1; justify-content: flex-end;">
+        <i class="bi bi-copy icon-overlay" style="font-size: 1.5em; padding-right: 5px; padding-left: 5px;"
+           title="Copier des shifts" onclick="CopyShifts()"></i>
+        <i class="bi bi-trash icon-overlay" style="font-size: 1.5em; padding-right: 5px; padding-left: 5px;"
+           title="Supprimer des shifts" onclick="DeleteShifts()"></i>
+        <i class="bi bi-printer icon-overlay" style="font-size: 1.5em; padding-right: 5px; padding-left: 5px;"
+           title="Imprimer le planning" onclick="printTable('table1')"></i>
     </div>
 </div>
+
 <table class = "my-table", border="1" id = "table1">
     <thead>
         <tr>
@@ -27,11 +45,11 @@
             {% endfor %}
         </tr>
     </thead>
-    <tbody>
+    <tbody id="sortableEmployees">
         {% for emp in employe %}
-            <tr>
+            <tr data-employee-id="{{ emp.id }}" class="employee-row">
                 <td class ="employee-cell">
-                {{ emp.firstname }} {{ emp.name }}
+                    <strong><span class ="employeeStyle drag-handle" title="Glisser pour réordonner">☰ </span><span class ="employeeStyle">{{ emp.firstname }} {{ emp.name }}</span> <span class ="value-right">{% travail_hebdo emp start_date|date:'W' start_date|add_days:3|date:'Y' as heures_travaillees %} {{ heures_travaillees }}</span></strong>
                 </td>
                 {% for day in days %}
                     <!-- Shift code here -->
@@ -42,7 +60,7 @@
                                 ondragleave="dragLeave(event)"
                                 onclick="openModal(this, '{{ emp.id }}', '{{ emp.name }}', '{{ emp.firstname }}', '{{ emp.Poste.id }}', '{{ day|date:'Y-m-d' }}')"
                                 data-EmployeId = "{{ emp.id }}"
-                                data-date = "{{ day|date:'Y-m-d' }}">
+                                data-date = "{{ day|date:'Y-m-d' }}" >
                                     <i class="bi bi-plus-circle-fill plus-icon"></i>
                                     <table border="1">
                                         {% for key, value in shifts_by_emp_and_day.items %}
@@ -62,6 +80,7 @@
                                                                     data-end-time="{{ nitem.heuredefin }}"
                                                                     data-duree-pause="{{ nitem.duréepause }}"
                                                                     data-Poste="{{ nitem.Poste.id }}"
+                                                                    data-heuresup="{{ nitem.is_overtime}}"
                                                                     data-note="{{ nitem.note }}"
                                                                     data-EmployeName = "{{ emp.name }}"
                                                                     data-EmployeFirstName = "{{ emp.firstname }}"
@@ -89,14 +108,19 @@
                                                                             ❌ Aucun badge enregistré
                                                                         {% endif %}
                                                                     ">
-                                                                    {{nitem.Heurededébut}} - {{nitem.heuredefin}}      ({{ nitem.duree_pause_minutes }} min) <span class="value-right {% if nitem.users_badged_shift and nitem.difference_travail_reel_theorique|first == '-' %} negative-diff {% elif nitem.users_badged_shift %} positive-diff {% endif %}">{% if nitem.users_badged_shift %}{{nitem.difference_travail_reel_theorique}}{% endif %}</span>
+                                                                    <strong>{{nitem.Heurededébut}} - {{nitem.heuredefin}}      ({{ nitem.duree_pause_minutes }} min)</strong><span class="value-right {% if nitem.users_badged_shift and nitem.difference_travail_reel_theorique|first == '-' %} negative-diff {% elif nitem.users_badged_shift %} positive-diff {% endif %}">{% if nitem.users_badged_shift %}{{nitem.difference_travail_reel_theorique}}{% endif %}</span>
                                                                     {% if nitem.note %}
                                                                         <i class="bi bi-file-text"></i>
                                                                     {% endif %}
                                                                     {% if nitem.is_absence %}
                                                                           - {{nitem.TypeAbsence}}
                                                                     {% endif %}
-                                                                    <div class ="PosteCss" style="width: 80%; height: 20px; background-color: {{ nitem.Poste.couleur }}; overflow: hidden; text-overflow: ellipsis ;">{{nitem.Poste}}</div>
+                                                                    <p>
+                                                                        <span class="PosteCss" style="display: inline-block; width: 80%; height: 20px; background-color: {{ nitem.Poste.couleur }}; overflow: hidden; text-overflow: ellipsis;">
+                                                                            {{ nitem.Poste }}
+                                                                        </span> 
+                                                                        <strong>{{ nitem.duree_travail_theorique_reformulee }}</strong>
+                                                                    </p>
                                                                 </td>
                                                             </tr>
                                                         {% endfor %}
@@ -111,6 +135,14 @@
             </tr>
         {% endfor %}
     </tbody>
+    <tfoot>
+        <tr id="sticky-footer">
+            <td>Total heures travaillées par journée</td>
+            {% for day in days %}
+            <td class="heures_journalieres">{% travail_Journalier_Entreprise day|date:'w' start_date|date:'W' start_date|add_days:3|date:'Y' as total_heure %} {{ total_heure }}</td>
+            {% endfor %}
+        </tr>
+    </tfoot>
 </table>
 <!-- The Modal which handles single shifts stuff -->
 <div id="myModal" class="modal">
@@ -372,6 +404,20 @@
                             </select>
                         </div>
                     </div>
+                <!-- option heure sup -->
+                <div class="form-group row">
+                    <label for="{{ form.checkbox_field_heuresup.id_for_label }}" class="col-sm-9 col-form-label">
+                        {{ form.checkbox_field_heuresup.label }}
+                    </label>
+                    <div class="col-sm-3 d-flex align-items-start">
+                        <input type="checkbox" name="{{ form.checkbox_field_heuresup.name }}" 
+                               id="EditHeureSupCheckbox" 
+                               class="form-check-input"
+                               style="margin-top: 18px;" 
+                               {% if form.checkbox_field_heuresup.value %}checked{% endif %}>
+                        <div class="invalid-feedback">{{ form.checkbox_field_heuresup.errors }}</div>
+                    </div>
+                </div>
                     <!-- Note -->
                     <div class="form-group row">
                         <label for="{{ form.heuredefin.id_for_label }}" class="col-sm-2 col-form-label">{{ form.note.label }}</label>
@@ -543,14 +589,74 @@
     </div>
 </div>
 <script> 
-    function printTable() {
-        var tableContent = document.getElementById("table1").outerHTML;
-        var newWin = window.open('', '_blank');
-        newWin.document.open();
-        newWin.document.write('<html><body onload="window.print()">' + tableContent + '</body></html>');
-        newWin.document.close();
-        setTimeout(function(){newWin.close();}, 10);
+function printTable(tableId) {
+    var table = document.getElementById(tableId);
+    if (!table) {
+        console.error("⚠️ Table introuvable !");
+        return;
     }
+
+    // Ouvrir une nouvelle page HTML
+    var newWin = window.open("", "_blank");
+
+    // Générer le contenu HTML de la nouvelle page
+    newWin.document.write(`
+        <html>
+            <head>
+                <title>Impression</title>
+                <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/materia/bootstrap.min.css" rel="stylesheet">
+                <link rel="stylesheet" type="text/css" href="/static/css/print.css">
+                <style>
+                    @page { 
+                        size: A4 landscape; 
+                        margin: 10mm; 
+                    }
+
+                    body { 
+                        font-family: Arial, sans-serif;
+                        background-color: white;
+                        color: black;
+                    }
+
+                    table { 
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 12px;
+                    }
+
+                    th, td { 
+                        border: 1px solid black;
+                        padding: 8px;
+                        text-align: left;
+                    }
+
+                    thead { 
+                        display: table-header-group;
+                    }
+                </style>
+            </head>
+            <body>
+                <h2>Emploi du temps</h2>
+                ${table.outerHTML}
+            </body>
+        </html>
+    `);
+
+    newWin.document.close();
+
+    // Créer un script dans la nouvelle fenêtre pour gérer l'impression
+    var printScript = newWin.document.createElement("script");
+    printScript.textContent = `
+        window.onload = function() {
+            window.print();
+            setTimeout(() => window.close(), 500);
+        };
+    `;
+
+    newWin.document.body.appendChild(printScript);
+}
+
+
     var modalCopy = document.getElementById("ModalCopy"); //move this into the function ?
     var modalDelete = document.getElementById("ModalDelete"); //move this into the function ?
     function CopyShifts(){
@@ -659,6 +765,7 @@
         document.getElementById('EditShiftTypeFormId').value = "EditShift";
         document.getElementById('EditShiftShift_Id').value = cell.getAttribute('data-shiftId');
         document.getElementById('EditShiftPoste').value = cell.getAttribute('data-Poste');
+        document.getElementById('EditHeureSupCheckbox').checked  = cell.getAttribute('data-heuresup') === "True";
         document.getElementById('EditShiftnote').value = cell.getAttribute('data-note');
         document.getElementById('EditerShiftContent').style.display = 'block';
         //Fill nouveau shift form
@@ -848,7 +955,23 @@ document.getElementById('modalDeleteShiftsSubmitBtn').addEventListener('click', 
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
     });
-    
+    //script qui gère la foncton de recherche suit ici
+    // ✅ Fonction pour filtrer les employés dynamiquement
+    document.getElementById("searchInput").addEventListener("keyup", function () {
+        let filter = this.value.toLowerCase().trim(); // Convert input to lowercase & trim spaces
+        let rows = document.querySelectorAll("#table1 tbody tr"); // Select all employee rows
+
+        rows.forEach(row => {
+            let nameCell = row.querySelector(".employeeStyle"); // Get the employee name cell
+
+            if (nameCell) {
+                let text = nameCell.textContent.toLowerCase().trim(); // Get name & remove spaces
+                row.style.display = text.includes(filter) ? "" : "none"; // Hide if not matching
+            }
+        });
+    });
+
+    //script qui gere le drag suit ici
     let draggedShift = null; // Stocke la cellule source
 
     function dragStart(event) {
@@ -878,6 +1001,10 @@ document.getElementById('modalDeleteShiftsSubmitBtn').addEventListener('click', 
     }
 
     function allowDrop(event) {
+        if (window.isSorting) {
+            event.preventDefault();
+            return;
+        }
         event.preventDefault();
         let targetCell = event.target.closest("td");
         
@@ -916,6 +1043,10 @@ document.getElementById('modalDeleteShiftsSubmitBtn').addEventListener('click', 
 
     // 📌 Gérer le drop (Copie des données + Supprimer les animations)
     function dropShift(event) {
+        if (window.isSorting) {
+            event.preventDefault();
+            return;
+        }
         event.preventDefault();
 
         let targetCell = event.target.closest("td");
@@ -991,43 +1122,53 @@ document.getElementById('modalDeleteShiftsSubmitBtn').addEventListener('click', 
     }
 
 </script>
-<!--<script>
-    document.querySelectorAll('.shift-cell').forEach(cell => {
-        cell.addEventListener('mouseenter', function () {
-            let employeId = this.getAttribute('data-employeId');
-            let date = this.getAttribute('data-date');
-
-            fetch(`/api/get-badge-hours/${employeId}/${date}/`)
-                .then(response => response.json())
-                .then(data => {
-                    let tooltipText = (data.status === 'success')
-                        ? `Arrivées: ${data.heures_arrivees.join(", ")} | Départs: ${data.heures_departs.join(", ")}`
-                        : "Aucun badge trouvé";
-
-                    this.setAttribute('data-bs-original-title', tooltipText); // Met à jour le texte de la tooltip
-                    
-                    let tooltipInstance = bootstrap.Tooltip.getInstance(this); // Vérifie si la tooltip existe
-                    if (tooltipInstance) {
-                        tooltipInstance.dispose(); // Supprime la tooltip existante
-                    }
-                    
-                    bootstrap.Tooltip.getOrCreateInstance(this); // Crée ou met à jour la tooltip
-                })
-                .catch(error => {
-                    console.error('Erreur AJAX:', error);
-                    this.setAttribute('data-bs-original-title', "Erreur de chargement");
-
-                    let tooltipInstance = bootstrap.Tooltip.getInstance(this);
-                    if (tooltipInstance) {
-                        tooltipInstance.dispose();
-                    }
-
-                    bootstrap.Tooltip.getOrCreateInstance(this);
-                });
+<!-- Script thath andles reordering of employees-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Global flag to indicate sorting is in progress
+        window.isSorting = false;
+        
+        let sortable = new Sortable(document.getElementById("sortableEmployees"), {
+            animation: 150,
+            handle: ".drag-handle",
+            draggable: "tr.employee-row",
+            ghostClass: "sortable-ghost",
+            onStart: function(evt) {
+                window.isSorting = true;
+                console.log("Employee row drag started");
+            },
+            onEnd: function(evt) {
+                window.isSorting = false;
+                updateEmployeeOrder();
+                console.log("Employee row drag ended");
+            }
         });
-    });
 
-</script>-->
+        function updateEmployeeOrder() {
+            let rows = document.querySelectorAll("#sortableEmployees .employee-row");
+            let orderData = [];
+            rows.forEach((row, index) => {
+                let employeeId = row.getAttribute("data-employee-id");
+                orderData.push({ id: employeeId, order: index });
+            });
+            fetch("{% url 'update_employee_order' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({ order: orderData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Order updated:", data);
+            })
+            .catch(error => console.error("Error updating order:", error));
+        }
+    });
+</script>
+
 {% else %}
   <!-- Content to be displayed if the user does not have the permission -->
   <p>The user does not have the permission.</p>

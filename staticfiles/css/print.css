@@ -1,0 +1,45 @@
+/* CSS d'impression pour n'afficher que la table ciblée */
+@media print {
+    /* Masquer tous les éléments de la page */
+    body * {
+      visibility: hidden;
+    }
+    /* Afficher seulement l'élément de la table spécifiée (exemple ID "maTable") */
+    #maTable, #maTable * {
+      visibility: visible;
+    }
+    #maTable {
+      /* Placer la table en haut à gauche de la page et l'étendre en largeur */
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+    }
+  
+    /* Définir le format A4 paysage */
+    @page {
+      size: A4 landscape;
+      margin: 10mm;  /* marges de 1 cm (modifiable) */
+    }
+  
+    /* Optionnel : préserver les couleurs d'arrière-plan à l'impression */
+    #maTable {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  
+    /* Optionnel : répéter l'en-tête de table sur chaque page si la table est longue */
+    thead { display: table-header-group; }
+  }
+  
+  @media print {
+    body.print-table-mode * { visibility: hidden; }
+    body.print-table-mode .printable, 
+    body.print-table-mode .printable * { visibility: visible; }
+    body.print-table-mode .printable {
+      position: absolute; top: 0; left: 0; width: 100%;
+    }
+    @page { size: A4 landscape; margin: 10mm; }
+    /* ...autres règles optionnelles... */
+  }
+  
